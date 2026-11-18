@@ -6,16 +6,16 @@
     <title>Central Banker Tycoon - Symulator Polityki Monetarnej</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning-bg: #fef3c7;
-            --warning-border: #f59e0b;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,8 +30,9 @@
         }
         .container {
             background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.5);
             width: 100%;
             max-width: 850px;
             padding: 24px;
@@ -50,11 +51,14 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
+            color: var(--text);
         }
         .form-control {
             width: 100%;
             padding: 12px;
+            background-color: #0f172a;
             border: 1px solid var(--border);
+            color: var(--text);
             border-radius: 8px;
             font-size: 1rem;
             box-sizing: border-box;
@@ -70,7 +74,8 @@
             padding-right: 5px;
         }
         .stat-card {
-            background: #f1f5f9;
+            background: #0f172a;
+            border: 1px solid var(--border);
             padding: 10px 12px;
             border-radius: 8px;
             display: flex;
@@ -79,11 +84,16 @@
             font-size: 0.9rem;
         }
         .stat-card span {
-            color: #64748b;
+            color: var(--text-muted);
         }
         .stat-card strong {
-            color: var(--text);
+            font-weight: bold;
         }
+        /* Klasy kolorów wskaźników */
+        .status-green { color: var(--success); }
+        .status-yellow { color: var(--warning); }
+        .status-red { color: var(--danger); }
+
         .screen {
             display: none;
         }
@@ -110,26 +120,30 @@
             background-color: var(--primary-dark);
         }
         .btn-secondary {
-            background-color: #64748b;
+            background-color: #475569;
+            color: #f8fafc;
         }
         .btn-secondary:hover {
-            background-color: #475569;
+            background-color: #334155;
         }
         .btn-warning {
-            background-color: #d97706;
+            background-color: #b45309;
+            color: white;
         }
         .btn-warning:hover {
-            background-color: #b45309;
+            background-color: #92400e;
         }
         .btn-danger {
             background-color: var(--danger);
+            color: white;
         }
         .btn-danger:hover {
-            background-color: #b91c1c;
+            background-color: #dc2626;
         }
         .log-box {
-            background: #f8fafc;
+            background: #0f172a;
             border: 1px solid var(--border);
+            color: var(--text);
             padding: 12px;
             border-radius: 8px;
             margin-top: 15px;
@@ -137,25 +151,28 @@
             font-size: 0.95rem;
         }
         .event-box {
-            background-color: var(--warning-bg);
-            border: 2px solid var(--warning-border);
+            background-color: #451a03;
+            border: 2px solid var(--warning);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
+            color: #fef3c7;
         }
         .event-box h3 {
             margin-top: 0;
-            color: #b45309;
+            color: #f59e0b;
         }
         .header-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #e2e8f0;
+            background: #0f172a;
+            border: 1px solid var(--border);
             padding: 8px 15px;
             border-radius: 8px;
             margin-bottom: 15px;
             font-weight: bold;
+            color: var(--text);
         }
     </style>
 </head>
@@ -165,7 +182,7 @@
     <!-- Ekran Startowy -->
     <div id="screen-start" class="screen active">
         <h1>🏦 Central Banker Tycoon</h1>
-        <p>Wciel się w rolę Prezesa Banku Centralnego i pokieruj losem swojego państwa przez 5 kwartałów.</p>
+        <p style="color: var(--text-muted);">Wciel się w rolę Prezesa Banku Centralnego i pokieruj losem swojego państwa przez 5 kwartałów.</p>
         
         <div class="form-group" style="margin-top: 20px;">
             <label for="input-nazwa">Nazwa Twojego Państwa:</label>
@@ -199,7 +216,7 @@
             <div class="stat-card"><span>Siła militarna:</span> <strong id="s-militaria">2.1% PKB</strong></div>
         </div>
 
-        <!-- Kontener na decyzje (standardowe, kryzys 1 lub kryzys 2) -->
+        <!-- Kontener na decyzje -->
         <div id="obszar-decyzji">
             <p style="margin-top: 15px; margin-bottom: 5px;"><strong>Podejmij decyzję Rady Polityki Pieniężnej:</strong></p>
             
@@ -211,7 +228,7 @@
 
             <div id="przyciski-kryzys-granica" style="display: none;">
                 <div class="event-box">
-                    <h3>⚠️ SYTUACJA KRYZYSOWA (Tura 2): Wrogie wojska ćwiczą na granicy!</h3>
+                    <h3>⚠️ SYTUACJA KRYZYSLOWA (Tura 2): Wrogie wojska ćwiczą na granicy!</h3>
                     <p>Społeczeństwo żąda wzmocnienia obronności. Rząd naciska na bank centralny, aby uruchomić rotę drukarską i sfinansować pakiet zbrojeniowy.</p>
                 </div>
                 <button class="btn btn-danger" onclick="wykonajKryzysGranica(1)">🖨️ Drukuj pieniądze na militaria (Wzrost siły i poparcia, ale gigantyczna inflacja i dług)</button>
@@ -220,7 +237,7 @@
 
             <div id="przyciski-kryzys-giełda" style="display: none;">
                 <div class="event-box">
-                    <h3>📉 SYTUACJA KRYZYSOWA (Tura 4): Krach na Wall Street ("Czarny Czwartek")!</h3>
+                    <h3>📉 SYTUACJA KRYZYSLOWA (Tura 4): Krach na Wall Street ("Czarny Czwartek")!</h3>
                     <p>Panika na rynkach! Banki masowo upadają, a ludzie szturmują okienka, chcąc wypłacić oszczędności.</p>
                 </div>
                 <button class="btn" onclick="wykonajKryzysGielda(1)">🏦 Agresywnie obniż stopy i dostarcz płynność (Ratuj banki i system przed paniką)</button>
@@ -236,7 +253,7 @@
     <!-- Ekran Końcowy -->
     <div id="screen-end" class="screen">
         <h1 id="tytul-koniec">📊 Koniec Gry</h1>
-        <p id="koniec-podsumowanie"></p>
+        <p id="koniec-podsumowanie" style="color: var(--text-muted);"></p>
         <button class="btn" onclick="resetujGre()">Zagraj ponownie</button>
     </div>
 </div>
@@ -255,7 +272,7 @@
         dlug: 52.0,
         bilans: -1.5,
         gini: 0.32,
-        podzial: 4.0, // skala 1-10
+        podzial: 4.0,
         inwestycje: 21.0,
         prod: 100,
         populalnosc: 50,
@@ -295,21 +312,63 @@
         document.getElementById(idEkranu).classList.add('active');
     }
 
+    // Pomocnicza funkcja do ustalania klas kolorów (Zielony / Żółty / Czerwony)
+    function getStatusClass(val, type) {
+        if (type === 'inflacja') {
+            if (val >= 2.0 && val <= 3.5) return 'status-green';
+            if ((val >= 1.0 && val < 2.0) || (val > 3.5 && val <= 6.0)) return 'status-yellow';
+            return 'status-red';
+        }
+        if (type === 'pkb') {
+            if (val >= 2.0) return 'status-green';
+            if (val >= 0.0 && val < 2.0) return 'status-yellow';
+            return 'status-red';
+        }
+        if (type === 'bezrobocie') {
+            if (val <= 6.0) return 'status-green';
+            if (val > 6.0 && val <= 10.0) return 'status-yellow';
+            return 'status-red';
+        }
+        if (type === 'populalnosc' || type === 'zadowolenie') {
+            if (val >= 50) return 'status-green';
+            if (val >= 30 && val < 50) return 'status-yellow';
+            return 'status-red';
+        }
+        if (type === 'dlug') {
+            if (val <= 55) return 'status-green';
+            if (val > 55 && val <= 75) return 'status-yellow';
+            return 'status-red';
+        }
+        return 'status-green';
+    }
+
+    function setElementColorAndText(elementId, text, val, type) {
+        const el = document.getElementById(elementId);
+        el.innerText = text;
+        el.className = getStatusClass(val, type);
+    }
+
     function aktualizujInterfejs() {
         document.getElementById('tura-tytul').innerText = `Kwartał ${stan.tura} / ${stan.maxTur}`;
         document.getElementById('s-pop').innerText = stan.populacja.toFixed(1) + ' mln';
-        document.getElementById('s-zadowolenie').innerText = stan.zadowolenie + '%';
-        document.getElementById('s-pkb').innerText = stan.pkb.toFixed(1) + '%';
-        document.getElementById('s-inflacja').innerText = stan.inflacja.toFixed(1) + '%';
-        document.getElementById('s-bezrobocie').innerText = stan.bezrobocie.toFixed(1) + '%';
+        
+        setElementColorAndText('s-zadowolenie', stan.zadowolenie + '%', stan.zadowolenie, 'zadowolenie');
+        setElementColorAndText('s-pkb', stan.pkb.toFixed(1) + '%', stan.pkb, 'pkb');
+        setElementColorAndText('s-inflacja', stan.inflacja.toFixed(1) + '%', stan.inflacja, 'inflacja');
+        setElementColorAndText('s-bezrobocie', stan.bezrobocie.toFixed(1) + '%', stan.bezrobocie, 'bezrobocie');
+        
         document.getElementById('s-stopy').innerText = stan.stopy.toFixed(1) + '%';
-        document.getElementById('s-dlug').innerText = stan.dlug.toFixed(1) + '%';
+        
+        setElementColorAndText('s-dlug', stan.dlug.toFixed(1) + '%', stan.dlug, 'dlug');
+        
         document.getElementById('s-bilans').innerText = stan.bilans.toFixed(1) + '%';
         document.getElementById('s-gini').innerText = stan.gini.toFixed(2);
         document.getElementById('s-podzial').innerText = stan.podzial.toFixed(1);
         document.getElementById('s-inwestycje').innerText = stan.inwestycje.toFixed(1) + '%';
         document.getElementById('s-prod').innerText = Math.round(stan.prod) + ' pkt';
-        document.getElementById('s-populalnosc').innerText = stan.populalnosc + '%';
+        
+        setElementColorAndText('s-populalnosc', stan.populalnosc + '%', stan.populalnosc, 'populalnosc');
+        
         document.getElementById('s-militaria').innerText = stan.militaria.toFixed(1) + '% PKB';
 
         // Sterowanie widocznością paneli decyzji
@@ -395,8 +454,8 @@
             stan.sukcesy++;
             msg = "🏦 <strong>Mistrzowska interwencja!</strong> Agresywne obniżenie stóp i ratunkowe pożyczki dla banków zażegnały panikę. System bankowy uratowany, gospodarka wraca na tory wzrostu!";
         } else if (wybor === 2) { // Porażka: zacieśnienie
-            stan.pkb -= 12.5; // Wielka Depresja
-            stan.bezrobocie = 25.0; // Bezrobocie sięga 25%
+            stan.pkb -= 12.5;
+            stan.bezrobocie = 25.0;
             stan.inflacja -= 4.0;
             stan.zadowolenie -= 30;
             stan.populalnosc -= 35;
@@ -419,9 +478,7 @@
         stan.populalnosc = Math.max(0, Math.min(100, stan.populalnosc));
         stan.podzial = Math.max(1, Math.min(10, stan.podzial));
 
-        // --- SPRAWDZENIE WARUNKÓW KRYTYCZNYCH I LOSOWYCH (ZGODNIE Z WYMAGANIAMI) ---
-        
-        // 1. Sprawdzenie popularności politycznej (bardzo niska, np. poniżej 20%)
+        // --- SPRAWDZENIE WARUNKÓW KRYTYCZNYCH I LOSOWYCH ---
         if (stan.populalnosc < 20) {
             let los = Math.random() * 100;
             if (los < 25) {
@@ -431,29 +488,27 @@
                 zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Zbyt niska popularność polityczna i gniew tłumu doprowadziły do tragicznego zamachu na Twoje życie.");
                 return;
             } else {
-                msg += "<br>⚠️ <em>Ostrzeżenie: Parlament w ostatniej chwili dał Ci drugą szansę ze względu na stabilność państwa, ale masz ostrzeżenie!</em>";
+                msg += "<br>⚠️ <i>Ostrzeżenie: Parlament w ostatniej chwili dał Ci drugą szansę ze względu na stabilność państwa!</i>";
             }
         }
 
-        // 2. Sprawdzenie wzrostu realnego PKB (bardzo mocny spadek, np. poniżej -3.0%)
         if (stan.pkb < -3.0) {
             let los = Math.random() * 100;
             if (los < 50) {
-                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Drastyczny spadek PKB sprawił, że kraj pogrążył się w kryzysie i zostałeś natychmiast odwołany ze stanowiska.");
+                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Drastyczny spadek PKB sprawił, że kraj pogrążył się w kryzysie i zostałeś odwołany.");
                 return;
             } else if (los < 75) {
                 zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Wściekły tłum i radykałowie przeprowadzili zamach z powodu zapaści gospodarczej kraju.");
                 return;
             } else {
-                msg += "<br>⚠️ <em>Ostrzeżenie: Gospodarka legła w gruzach, ale rząd postanowił warunkowo utrzymać Cię na stanowisku na jeden kwartał.</em>";
+                msg += "<br>⚠️ <i>Ostrzeżenie: Gospodarka legła w gruzach, ale rząd postanowił warunkowo utrzymać Cię na stanowisku.</i>";
             }
         }
 
-        // 3. Sprawdzenie podziału społeczeństwa i nierówności (Niski podział < 4.0 a wysokie nierówności Gini > 0.40)
         if (stan.podzial < 4.0 && stan.gini > 0.40) {
             let los = Math.random() * 100;
             if (los < 25) {
-                zakonczGrePrzedwczesnie("📢 <strong>Dymisja wymuszona przez ludność!</strong> Mimo niskiego podziału ogólnego, wysokie nierówności wywołały masowy opór społeczny i zmuszono Cię do dymisji.");
+                zakonczGrePrzedwczesnie("📢 <strong>Dymisja wymuszona przez ludność!</strong> Wysokie nierówności wywołały masowy opór społeczny i zmuszono Cię do dymisji.");
                 return;
             } else if (los < 50) {
                 zakonczGrePrzedwczesnie("🔥 <strong>Zamieszki i zamach!</strong> Ludzie wyszli na ulicę z powodu niesprawiedliwości dochodowej – doszło do zamieszek, w których zginąłeś.");
@@ -461,7 +516,6 @@
             }
         }
 
-        // 4. Sprawdzenie stopy bezrobocia
         if (stan.bezrobocie > 20.0) {
             let los = Math.random() * 100;
             if (los < 30) {
@@ -476,7 +530,6 @@
             }
         }
 
-        // Ocena celu inflacyjnego (2.0% - 3.5%) dla zwykłych tur
         if (stan.inflacja >= 2.0 && stan.inflacja <= 3.5) {
             stan.sukcesy++;
             msg += "<br>🎯 <em>Cel inflacyjny osiągnięty w tym kwartale!</em>";
