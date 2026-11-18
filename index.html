@@ -173,6 +173,7 @@
             margin-bottom: 15px;
             font-weight: bold;
             color: var(--text);
+            font-size: 0.95rem;
         }
     </style>
 </head>
@@ -182,7 +183,7 @@
     <!-- Ekran Startowy -->
     <div id="screen-start" class="screen active">
         <h1>🏦 Central Banker Tycoon</h1>
-        <p style="color: var(--text-muted);">Wciel się w rolę Prezesa Banku Centralnego i pokieruj losem swojego państwa przez 5 kwartałów.</p>
+        <p style="color: var(--text-muted);">Wciel się w rolę Prezesa Banku Centralnego i pokieruj losem swojego państwa przez 6 kwartałów.</p>
         
         <div class="form-group" style="margin-top: 20px;">
             <label for="input-nazwa">Nazwa Twojego Państwa:</label>
@@ -196,7 +197,8 @@
     <div id="screen-game" class="screen">
         <div class="header-info">
             <span id="panstwo-tytul">Państwo</span>
-            <span id="tura-tytul">Kwartał 1 / 5</span>
+            <span id="tura-tytul">Kwartał 1 / 6</span>
+            <span id="punkty-tytul" style="color: var(--warning);">⭐ Punkty: 0</span>
         </div>
         
         <div class="stats-grid">
@@ -243,6 +245,15 @@
                 <button class="btn" onclick="wykonajKryzysGielda(1)">🏦 Agresywnie obniż stopy i dostarcz płynność (Ratuj banki i system przed paniką)</button>
                 <button class="btn btn-danger" onclick="wykonajKryzysGielda(2)">🚫 Zacieśnij politykę / pozostaw banki samorzutnemu losowi (Ortodoksyjna dyscyplina)</button>
             </div>
+
+            <div id="przyciski-kryzys-naftowy" style="display: none;">
+                <div class="event-box" style="background-color: #450a0a; border-color: #ef4444;">
+                    <h3 style="color: #f87171;">🛢️ SYTUACJA KRYZYSLOWA (Tura 5): Kryzys Naftowy i Dwucyfrowa Inflacja!</h3>
+                    <p>W wyniku wstrząsów naftowych inflacja osiągnęła poziom ~15%, a społeczeństwo traci wiarę w stabilność waluty.</p>
+                </div>
+                <button class="btn btn-danger" onclick="wykonajKryzysNaftowy(1)">⚡ Ekstremalna podwyżka stóp do 20% (Złam kręgosłup inflacji bez oglądania się na protesty!)</button>
+                <button class="btn btn-secondary" onclick="wykonajKryzysNaftowy(2)">🕊️ Miękka polityka / łagodne podwyżki stóp (Chroń wzrost i oszczędź protestów polityków)</button>
+            </div>
         </div>
 
         <div class="log-box" id="komunikat">
@@ -262,7 +273,8 @@
     let stan = {
         nazwa: "Republika Monety",
         tura: 1,
-        maxTur: 5,
+        maxTur: 6,
+        punkty: 0,
         populacja: 38.0,
         zadowolenie: 65,
         pkb: 2.5,
@@ -286,6 +298,7 @@
             stan.nazwa = inputVal;
         }
         stan.tura = 1;
+        stan.punkty = 0;
         stan.populacja = 38.0;
         stan.zadowolenie = 65;
         stan.pkb = 2.5;
@@ -312,7 +325,7 @@
         document.getElementById(idEkranu).classList.add('active');
     }
 
-    // Pomocnicza funkcja do ustalania klas kolorów (Zielony / Żółty / Czerwony)
+    // Pomocnicza funkcja do ustalania klas kolorów
     function getStatusClass(val, type) {
         if (type === 'inflacja') {
             if (val >= 2.0 && val <= 3.5) return 'status-green';
@@ -350,6 +363,7 @@
 
     function aktualizujInterfejs() {
         document.getElementById('tura-tytul').innerText = `Kwartał ${stan.tura} / ${stan.maxTur}`;
+        document.getElementById('punkty-tytul').innerText = `⭐ Punkty: ${stan.punkty}`;
         document.getElementById('s-pop').innerText = stan.populacja.toFixed(1) + ' mln';
         
         setElementColorAndText('s-zadowolenie', stan.zadowolenie + '%', stan.zadowolenie, 'zadowolenie');
@@ -375,11 +389,14 @@
         document.getElementById('przyciski-standardowe').style.display = 'none';
         document.getElementById('przyciski-kryzys-granica').style.display = 'none';
         document.getElementById('przyciski-kryzys-giełda').style.display = 'none';
+        document.getElementById('przyciski-kryzys-naftowy').style.display = 'none';
 
         if (stan.tura === 2) {
             document.getElementById('przyciski-kryzys-granica').style.display = 'block';
         } else if (stan.tura === 4) {
             document.getElementById('przyciski-kryzys-giełda').style.display = 'block';
+        } else if (stan.tura === 5) {
+            document.getElementById('przyciski-kryzys-naftowy').style.display = 'block';
         } else {
             document.getElementById('przyciski-standardowe').style.display = 'block';
         }
@@ -401,12 +418,14 @@
             stan.inwestycje -= 1.0;
             stan.dlug += 0.5;
             stan.podzial += 0.3;
-            msg = "📈 <strong>Zacieśnienie polityki:</strong> Stopy w górę. Inflacja spada, koszty kredytów rosną, a podział społeczny pogłębia się.";
+            stan.punkty += 15;
+            msg = "📈 <strong>Zacieśnienie polityki:</strong> Stopy w górę. Inflacja spada (+15 pkt).";
         } else if (wybor === 2) { // Bez zmian
             stan.inflacja += 0.2;
             stan.pkb += 0.1;
             stan.bezrobocie -= 0.1;
-            msg = "⚖️ <strong>Utrzymanie kursu:</strong> Brak zmian stóp. Gospodarka stabilna.";
+            stan.punkty += 5;
+            msg = "⚖️ <strong>Utrzymanie kursu:</strong> Brak zmian stóp (+5 pkt).";
         } else if (wybor === 3) { // Obniżka stóp
             stan.stopy = Math.max(0.0, stan.stopy - 1.0);
             stan.inflacja += 2.2;
@@ -417,7 +436,8 @@
             stan.inwestycje += 1.5;
             stan.gini += 0.01;
             stan.podzial -= 0.2;
-            msg = "📉 <strong>Poluzowanie polityki:</strong> Tanie kredyty napędzają inwestycje i wzrost PKB, bezrobocie spada.";
+            stan.punkty += 10;
+            msg = "📉 <strong>Poluzowanie polityki:</strong> Wzrost PKB i inwestycji (+10 pkt).";
         }
 
         zaksiegujKoniecTury(msg);
@@ -432,13 +452,15 @@
             stan.populalnosc += 12;
             stan.zadowolenie -= 8;
             stan.pkb += 0.5;
-            msg = "🖨️ <strong>Wydrukowano pieniądze na obronność!</strong> Siła militarna rośnie, ale inflacja i dług wystrzeliły w kosmos!";
+            stan.punkty += 20;
+            msg = "🖨️ <strong>Wydrukowano pieniądze na obronność!</strong> Siła militarna rośnie, ale inflacja i dług wystrzeliły w kosmos (+20 pkt).";
         } else if (wybor === 2) { // Odmów
             stan.populalnosc -= 18;
             stan.zadowolenie -= 15;
             stan.inflacja -= 0.5;
             stan.podzial += 1.0;
-            msg = "🛡️ <strong>Odmówiono drukowania pieniędzy!</strong> Obywatele czują się zagrożeni, a poparcie i zadowolenie legły w gruzach.";
+            stan.punkty += 10;
+            msg = "🛡️ <strong>Odmówiono drukowania pieniędzy!</strong> Obywatele czują się zagrożeni (+10 pkt).";
         }
         zaksiegujKoniecTury(msg);
     }
@@ -452,7 +474,8 @@
             stan.zadowolenie += 10;
             stan.populalnosc += 8;
             stan.sukcesy++;
-            msg = "🏦 <strong>Mistrzowska interwencja!</strong> Agresywne obniżenie stóp i ratunkowe pożyczki dla banków zażegnały panikę. System bankowy uratowany, gospodarka wraca na tory wzrostu!";
+            stan.punkty += 50;
+            msg = "🏦 <strong>Mistrzowska interwencja!</strong> Agresywne obniżenie stóp i płynność dla banków uratowały system! (+50 pkt)";
         } else if (wybor === 2) { // Porażka: zacieśnienie
             stan.pkb -= 12.5;
             stan.bezrobocie = 25.0;
@@ -460,7 +483,31 @@
             stan.zadowolenie -= 30;
             stan.populalnosc -= 35;
             stan.podzial += 3.0;
-            msg = "🚫 <strong>Katastrofalny błąd!</strong> Brak płynności doprowadził do masowych bankructw banków. Wybuchła Wielka Depresja: PKB załamało się o kilkadziesiąt procent, a bezrobocie osiągnęło 25%!";
+            stan.punkty -= 30;
+            msg = "🚫 <strong>Katastrofalny błąd!</strong> Brak płynności doprowadził do Wielkiej Depresji i 25% bezrobocia! (-30 pkt)";
+        }
+        zaksiegujKoniecTury(msg);
+    }
+
+    function wykonajKryzysNaftowy(wybor) {
+        let msg = "";
+        if (wybor === 1) { // Ekstremalna podwyżka stóp (Volcker Shock)
+            stan.stopy = 19.5;
+            stan.inflacja = 2.8; // Złamanie inflacji
+            stan.pkb -= 3.5; // Recesja
+            stan.inwestycje -= 4.0;
+            stan.zadowolenie -= 15;
+            stan.populalnosc -= 20;
+            stan.sukcesy++;
+            stan.punkty += 100; // Ogromna nagroda za odważną reformę
+            msg = "⚡ <strong>Szok Volckera!</strong> Stopy wzrosły do 19.5%! Kręgosłup inflacji został brutalnie złamany, a wiarygodność banku centralnego wzrosła na dekady. Kosztem była jednak głęboka recesja i bolesny spadek inwestycji! (+100 pkt)";
+        } else if (wybor === 2) { // Miękka polityka
+            stan.inflacja = 16.5; // Hiperinflacja / stagflacja
+            stan.pkb -= 1.5;
+            stan.zadowolenie -= 25;
+            stan.populalnosc -= 30;
+            stan.punkty -= 40;
+            msg = "🕊️ <strong>Miękka polityka w obliczu kryzysu!</strong> Zbyt łagodne podejście doprowadziło do utrwalenia stagflacji i dwucyfrowej inflacji. Społeczeństwo straciło wiarę w walutę! (-40 pkt)";
         }
         zaksiegujKoniecTury(msg);
     }
@@ -482,36 +529,36 @@
         if (stan.populalnosc < 20) {
             let los = Math.random() * 100;
             if (los < 25) {
-                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Twoja popularność polityczna spadła do krytycznego poziomu. Rząd wręczył Ci natychmiastowe wypowiedzenie.");
+                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Twoja popularność polityczna spadла do krytycznego poziomu.");
                 return;
             } else if (los < 50) {
-                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Zbyt niska popularność polityczna i gniew tłumu doprowadziły do tragicznego zamachu na Twoje życie.");
+                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Zbyt niska popularność polityczna i gniew tłumu doprowadziły do zamachu.");
                 return;
             } else {
-                msg += "<br>⚠️ <i>Ostrzeżenie: Parlament w ostatniej chwili dał Ci drugą szansę ze względu na stabilność państwa!</i>";
+                msg += "<br>⚠️ <i>Ostrzeżenie: Parlament dał Ci warunkową drugą szansę!</i>";
             }
         }
 
-        if (stan.pkb < -3.0) {
+        if (stan.pkb < -4.0) {
             let los = Math.random() * 100;
             if (los < 50) {
-                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Drastyczny spadek PKB sprawił, że kraj pogrążył się w kryzysie i zostałeś odwołany.");
+                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Drastyczny spadek PKB sprawił, że zostałeś odwołany.");
                 return;
             } else if (los < 75) {
-                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Wściekły tłum i radykałowie przeprowadzili zamach z powodu zapaści gospodarczej kraju.");
+                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Wściekły tłum przeprowadził zamach z powodu zapaści gospodarczej.");
                 return;
             } else {
-                msg += "<br>⚠️ <i>Ostrzeżenie: Gospodarka legła w gruzach, ale rząd postanowił warunkowo utrzymać Cię na stanowisku.</i>";
+                msg += "<br>⚠️ <i>Ostrzeżenie: Kryzys gospodarczy jest potężny, ale zachowano Cię na stanowisku.</i>";
             }
         }
 
         if (stan.podzial < 4.0 && stan.gini > 0.40) {
             let los = Math.random() * 100;
             if (los < 25) {
-                zakonczGrePrzedwczesnie("📢 <strong>Dymisja wymuszona przez ludność!</strong> Wysokie nierówności wywołały masowy opór społeczny i zmuszono Cię do dymisji.");
+                zakonczGrePrzedwczesnie("📢 <strong>Dymisja wymuszona przez ludność!</strong> Wysokie nierówności i opór zmusiły Cię do dymisji.");
                 return;
             } else if (los < 50) {
-                zakonczGrePrzedwczesnie("🔥 <strong>Zamieszki i zamach!</strong> Ludzie wyszli na ulicę z powodu niesprawiedliwości dochodowej – doszło do zamieszek, w których zginąłeś.");
+                zakonczGrePrzedwczesnie("🔥 <strong>Zamieszki i zamach!</strong> Wybuchły zamieszki z powodu niesprawiedliwości dochodowej.");
                 return;
             }
         }
@@ -519,20 +566,21 @@
         if (stan.bezrobocie > 20.0) {
             let los = Math.random() * 100;
             if (los < 30) {
-                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Stopa bezrobocia przekracza 20%. Zdesperowani bezrobotni dokonali zamachu na prezesa banku centralnego.");
+                zakonczGrePrzedwczesnie("💀 <strong>Zamach!</strong> Stopa bezrobocia przekracza 20%. Zdesperowani bezrobotni dokonali zamachu.");
                 return;
             }
         } else if (stan.bezrobocie > 10.0) {
             let los = Math.random() * 100;
             if (los < 25) {
-                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Stopa bezrobocia wzrosła powyżej 10%, a władze uznały Twoją politykę za całkowitą porażkę.");
+                zakonczGrePrzedwczesnie("🧳 <strong>Zostałeś zwolniony!</strong> Stopa bezrobocia przekroczyła 10%.");
                 return;
             }
         }
 
         if (stan.inflacja >= 2.0 && stan.inflacja <= 3.5) {
             stan.sukcesy++;
-            msg += "<br>🎯 <em>Cel inflacyjny osiągnięty w tym kwartale!</em>";
+            stan.punkty += 25;
+            msg += "<br>🎯 <em>Cel inflacyjny osiągnięty w tym kwartale! (+25 pkt)</em>";
         } else {
             msg += "<br>⚠️ <em>Inflacja poza optymalnym przedziałem celu (2-3.5%).</em>";
         }
@@ -549,7 +597,8 @@
     function zakonczGrePrzedwczesnie(powod) {
         zmienEkran('screen-end');
         document.getElementById('tytul-koniec').innerText = "💀 KONIEC GRY - USUNIĘTY ZE STANOWISKA";
-        let podsumowanie = `Państwo: <strong>${stan.nazwa}</strong><br><br>`;
+        let podsumowanie = `Państwo: <strong>${stan.nazwa}</strong><br>`;
+        podsumowanie += `Zdobyte punkty: <strong>${stan.punkty} ⭐</strong><br><br>`;
         podsumowanie += `${powod}<br><br>`;
         podsumowanie += `Twoja kadencja dobiegła dramatycznego końca w <strong>${stan.tura}. kwartale</strong>.`;
         document.getElementById('koniec-podsumowanie').innerHTML = podsumowanie;
@@ -559,15 +608,18 @@
         zmienEkran('screen-end');
         document.getElementById('tytul-koniec').innerText = "📊 Podsumowanie Kadencji";
         let podsumowanie = `Państwo: <strong>${stan.nazwa}</strong><br>`;
+        podsumowanie += `⭐ Łączny wynik punktowy: <strong>${stan.punkty} punktów</strong><br>`;
         podsumowanie += `Wynik celów inflacyjnych: <strong>${stan.sukcesy} / ${stan.maxTur}</strong> udanych kwartałów.<br><br>`;
         podsumowanie += `Końcowe poparcie polityczne: <strong>${stan.populalnosc}%</strong><br>`;
         podsumowanie += `Końcowe zadowolenie społeczne: <strong>${stan.zadowolenie}%</strong><br>`;
         podsumowanie += `Końcowe bezrobocie: <strong>${stan.bezrobocie}%</strong><br><br>`;
         
-        if (stan.sukcesy >= 3 && stan.populalnosc >= 45 && stan.bezrobocie < 10) {
-            podsumowanie += "🏆 <strong>Pełny sukces!</strong> Przetrwałeś całą kadencję, balansując między stabilnością cen a spokojem społecznym.";
+        if (stan.punkty >= 150 && stan.sukcesy >= 3) {
+            podsumowanie += "🏆 <strong>Wybitna kadencja!</strong> Przejdziesz do historii jako legendarny szef banku centralnego, który opanował największe kryzysy!";
+        } else if (stan.punkty >= 80) {
+            podsumowanie += "🎯 <strong>Dobra kadencja!</strong> Poradziłeś sobie z wyzwaniami makroekonomicznymi i obroniłeś stabilność państwa.";
         } else {
-            podsumowanie += "💡 <strong>Przetrwałeś kadencję, ale z trudnościami!</strong> Gospodarka wymagała ostrożniejszych decyzji, a wskaźniki były mocno napięte.";
+            podsumowanie += "💡 <strong>Trudna kadencja!</strong> Wynik punktowy pokazuje, że gospodarka wymagała radykalniejszych i bardziej przemyślanych decyzji!";
         }
         document.getElementById('koniec-podsumowanie').innerHTML = podsumowanie;
     }
