@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Banker Tycoon - Symulator Polityki Monetarnej</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning-bg: #fef3c7;
+            --warning-border: #f59e0b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-align: center;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        /* Siatka statystyk */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            max-height: 330px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .stat-card {
+            background: #f1f5f9;
+            padding: 10px 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        .stat-card span {
+            color: #64748b;
+        }
+        .stat-card strong {
+            color: var(--text);
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+        .btn-warning {
+            background-color: #d97706;
+        }
+        .btn-warning:hover {
+            background-color: #b45309;
+        }
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        .log-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            min-height: 60px;
+            font-size: 0.95rem;
+        }
+        .event-box {
+            background-color: var(--warning-bg);
+            border: 2px solid var(--warning-border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .event-box h3 {
+            margin-top: 0;
+            color: #b45309;
+        }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Ekran Startowy -->
+    <div id="screen-start" class="screen active">
+        <h1>🏦 Central Banker Tycoon</h1>
+        <p>Wciel się w rolę Prezesa Banku Centralnego i pokieruj losem swojego państwa przez 4 kwartały.</p>
+        
+        <div class="form-group" style="margin-top: 20px;">
+            <label for="input-nazwa">Nazwa Twojego Państwa:</label>
+            <input type="text" id="input-nazwa" class="form-control" value="Republika Monety" placeholder="Wpisz nazwę...">
+        </div>
+        
+        <button class="btn" onclick="rozpocznijGre()">Rozpocznij kadencję</button>
+    </div>
+
+    <!-- Ekran Gry -->
+    <div id="screen-game" class="screen">
+        <div class="header-info">
+            <span id="panstwo-tytul">Państwo</span>
+            <span id="tura-tytul">Kwartał 1 / 4</span>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card"><span>Populacja:</span> <strong id="s-pop">38.0 mln</strong></div>
+            <div class="stat-card"><span>Zadowolenie:</span> <strong id="s-zadowolenie">65%</strong></div>
+            <div class="stat-card"><span>PKB (Wzrost):</span> <strong id="s-pkb">2.5%</strong></div>
+            <div class="stat-card"><span>Inflacja CPI:</span> <strong id="s-inflacja">6.5%</strong></div>
+            <div class="stat-card"><span>Stopa bezrobocia:</span> <strong id="s-bezrobocie">5.2%</strong></div>
+            <div class="stat-card"><span>Stopy referencyjne:</span> <strong id="s-stopy">5.0%</strong></div>
+            <div class="stat-card"><span>Dług publiczny (% PKB):</span> <strong id="s-dlug">52.0%</strong></div>
+            <div class="stat-card"><span>Bilans płatniczy:</span> <strong id="s-bilans">-1.5%</strong></div>
+            <div class="stat-card"><span>Nierówności (Gini):</span> <strong id="s-gini">0.32</strong></div>
+            <div class="stat-card"><span>Inwestycje (% PKB):</span> <strong id="s-inwestycje">21.0%</strong></div>
+            <div class="stat-card"><span>Produktywność:</span> <strong id="s-prod">100 pkt</strong></div>
+            <div class="stat-card"><span>Demografia (Dzietność):</span> <strong id="s-demo">1.42</strong></div>
+            <div class="stat-card"><span>Popularność polityczna:</span> <strong id="s-populalnosc">50%</strong></div>
+            <div class="stat-card"><span>Siła militarna:</span> <strong id="s-militaria">2.1% PKB</strong></div>
+        </div>
+
+        <!-- Kontener na dynamiczne opcje (zwykłe lub kryzysowe) -->
+        <div id="obszar-decyzji">
+            <p style="margin-top: 15px; margin-bottom: 5px;"><strong>Podejmij decyzję Rady Polityki Pieniężnej:</strong></p>
+            <div id="przyciski-standardowe">
+                <button class="btn btn-warning" onclick="wykonajRuch(1)">📈 Podwyżka stóp (+1.0%) – Walcz z inflacją</button>
+                <button class="btn btn-secondary" onclick="wykonajRuch(2)">⚖️ Utrzymaj stopy bez zmian – Neutralnie</button>
+                <button class="btn" onclick="wykonajRuch(3)">📉 Obniżka stóp (-1.0%) – Stymuluj gospodarkę</button>
+            </div>
+            <div id="przyciski-kryzys" style="display: none;">
+                <div class="event-box">
+                    <h3>⚠️ SYTUACJA KRYZYSLOWA: Wrogie wojska ćwiczą na granicy!</h3>
+                    <p>Społeczeństwo żąda natychmiastowego wzmocnienia obronności. Rząd naciska na bank centralny, aby "uruchomić rotę drukarską" i sfinansować gigantyczny pakiet zbrojeniowy.</p>
+                </div>
+                <button class="btn btn-danger" onclick="wykonajKryzys(1)">🖨️ Tak, drukuj pieniądze na militaria (Wzrost siły obronnej i poparcia, ale ogromna inflacja i dług)</button>
+                <button class="btn btn-secondary" onclick="wykonajKryzys(2)">🛡️ Nie, odmów drukowania pieniędzy (Zachowaj stabilność waluty, ale drastyczny spadek popularności i zadowolenia)</button>
+            </div>
+        </div>
+
+        <div class="log-box" id="komunikat">
+            Gospodarka wykazuje napięcia inflacyjne. Oczekiwania rynkowe są napięte.
+        </div>
+    </div>
+
+    <!-- Ekran Końcowy -->
+    <div id="screen-end" class="screen">
+        <h1>📊 Podsumowanie Kadencji</h1>
+        <p id="koniec-podsumowanie"></p>
+        <button class="btn" onclick="resetujGre()">Zagraj ponownie</button>
+    </div>
+</div>
+
+<script>
+    let stan = {
+        nazwa: "Republika Monety",
+        tura: 1,
+        maxTur: 4,
+        populacja: 38.0,
+        zadowolenie: 65,
+        pkb: 2.5,
+        inflacja: 6.5,
+        bezrobocie: 5.2,
+        stopy: 5.0,
+        dlug: 52.0,
+        bilans: -1.5,
+        gini: 0.32,
+        inwestycje: 21.0,
+        prod: 100,
+        demo: 1.42,
+        populalnosc: 50,
+        militaria: 2.1,
+        sukcesy: 0
+    };
+
+    function rozpocznijGre() {
+        let inputVal = document.getElementById('input-nazwa').value.trim();
+        if(inputVal !== "") {
+            stan.nazwa = inputVal;
+        }
+        stan.tura = 1;
+        stan.populacja = 38.0;
+        stan.zadowolenie = 65;
+        stan.pkb = 2.5;
+        stan.inflacja = 6.5;
+        stan.bezrobocie = 5.2;
+        stan.stopy = 5.0;
+        stan.dlug = 52.0;
+        stan.bilans = -1.5;
+        stan.gini = 0.32;
+        stan.inwestycje = 21.0;
+        stan.prod = 100;
+        stan.demo = 1.42;
+        stan.populalnosc = 50;
+        stan.militaria = 2.1;
+        stan.sukcesy = 0;
+
+        document.getElementById('panstwo-tytul').innerText = `Państwo: ${stan.nazwa}`;
+        zmienEkran('screen-game');
+        aktualizujInterfejs();
+    }
+
+    function zmienEkran(idEkranu) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(idEkranu).classList.add('active');
+    }
+
+    function aktualizujInterfejs() {
+        document.getElementById('tura-tytul').innerText = `Kwartał ${stan.tura} / ${stan.maxTur}`;
+        document.getElementById('s-pop').innerText = stan.populacja.toFixed(1) + ' mln';
+        document.getElementById('s-zadowolenie').innerText = stan.zadowolenie + '%';
+        document.getElementById('s-pkb').innerText = stan.pkb.toFixed(1) + '%';
+        document.getElementById('s-inflacja').innerText = stan.inflacja.toFixed(1) + '%';
+        document.getElementById('s-bezrobocie').innerText = stan.bezrobocie.toFixed(1) + '%';
+        document.getElementById('s-stopy').innerText = stan.stopy.toFixed(1) + '%';
+        document.getElementById('s-dlug').innerText = stan.dlug.toFixed(1) + '%';
+        document.getElementById('s-bilans').innerText = stan.bilans.toFixed(1) + '%';
+        document.getElementById('s-gini').innerText = stan.gini.toFixed(2);
+        document.getElementById('s-inwestycje').innerText = stan.inwestycje.toFixed(1) + '%';
+        document.getElementById('s-prod').innerText = Math.round(stan.prod) + ' pkt';
+        document.getElementById('s-demo').innerText = stan.demo.toFixed(2);
+        document.getElementById('s-populalnosc').innerText = stan.populalnosc + '%';
+        document.getElementById('s-militaria').innerText = stan.militaria.toFixed(1) + '% PKB';
+
+        // Sprawdzenie czy to tura z wydarzeniem militarnym (np. Tura 2)
+        if (stan.tura === 2) {
+            document.getElementById('przyciski-standardowe').style.display = 'none';
+            document.getElementById('przyciski-kryzys').style.display = 'block';
+        } else {
+            document.getElementById('przyciski-standardowe').style.display = 'block';
+            document.getElementById('przyciski-kryzys').style.display = 'none';
+        }
+    }
+
+    function wyswietlKomunikat(tekst) {
+        document.getElementById('komunikat').innerHTML = tekst;
+    }
+
+    function wykonajRuch(wybor) {
+        let msg = "";
+        if (wybor === 1) { // Podwyżka stóp
+            stan.stopy += 1.0;
+            stan.inflacja = Math.max(0.5, stan.inflacja - 1.8);
+            stan.pkb -= 0.6;
+            stan.bezrobocie += 0.4;
+            stan.zadowolenie -= 5;
+            stan.populalnosc -= 4;
+            stan.inwestycje -= 1.0;
+            stan.dlug += 0.5;
+            msg = "📈 <strong>Zacieśnienie polityki:</strong> Stopy w górę. Inflacja spada, ale rosną raty kredytów, bezrobocie lekko rośnie, a zadowolenie obywateli spada.";
+        } else if (wybor === 2) { // Bez zmian
+            stan.inflacja += 0.2;
+            stan.pkb += 0.1;
+            stan.bezrobocie -= 0.1;
+            msg = "⚖️ <strong>Utrzymanie kursu:</strong> Brak zmian stóp. Gospodarka stabilna, ale inflacja lekko pełznie w górę.";
+        } else if (wybor === 3) { // Obniżka stóp
+            stan.stopy = Math.max(0.0, stan.stopy - 1.0);
+            stan.inflacja += 2.2;
+            stan.pkb += 0.8;
+            stan.bezrobocie -= 0.5;
+            stan.zadowolenie += 6;
+            stan.populalnosc += 5;
+            stan.inwestycje += 1.5;
+            stan.gini += 0.01;
+            msg = "📉 <strong>Poluzowanie polityki:</strong> Tanie kredyty napędzają inwestycje i wzrost PKB, bezrobocie spada, ale rośnie ryzyko inflacyjne!";
+        }
+
+        zaksiegujKoniecTury(msg);
+    }
+
+    function wykonajKryzys(wybor) {
+        let msg = "";
+        if (wybor === 1) { // Drukuj pieniądze na militaria
+            stan.militaria += 3.5;
+            stan.inflacja += 4.5;
+            stan.dlug += 4.0;
+            stan.populalnosc += 12;
+            stan.zadowolenie -= 8;
+            stan.pkb += 0.5; // zbrojenia krótkoterminowo stymulują PKB
+            msg = "🖨️ <strong>Wydrukowano pieniądze na obronność!</strong> Siła militarna drastycznie wzrosła, a obywatele czują się bezpieczniej (wzrost popularności). Jednak monetyzacja długu wywołała potężną falę inflacji i skok zadłużenia!";
+        } else if (wybor === 2) { // Odmów drukowania
+            stan.populalnosc -= 18;
+            stan.zadowolenie -= 15;
+            stan.inflacja -= 0.5; // brak dodatkowego popytu
+            msg = "🛡️ <strong>Odmówiono drukowania pieniędzy!</strong> Bank centralny stanął na straży niezależności waluty, ale oburzeni obywatele czują się bezbronni wobec zagrożenia na granicy. Popularność polityczna i zadowolenie społeczne runęły!";
+        }
+
+        zaksiegujKoniecTury(msg);
+    }
+
+    function zaksiegujKoniecTury(msg) {
+        // Sprawdzenie celu inflacyjnego (2.0% - 3.5%)
+        if (stan.inflacja >= 2.0 && stan.inflacja <= 3.5) {
+            stan.sukcesy++;
+            msg += "<br>🎯 <em>Cel inflacyjny osiągnięty w tym kwartale!</em>";
+        } else {
+            msg += "<br>⚠️ <em>Inflacja poza optymalnym przedziałem celu (2-3.5%).</em>";
+        }
+
+        stan.tura++;
+        if (stan.tura > stan.maxTur) {
+            zaksiegujKoniec();
+        } else {
+            // Zaokrąglenia zmiennoprzecinkowe
+            stan.inflacja = Math.round(stan.inflacja * 10) / 10;
+            stan.pkb = Math.round(stan.pkb * 10) / 10;
+            stan.bezrobocie = Math.round(stan.bezrobocie * 10) / 10;
+            stan.dlug = Math.round(stan.dlug * 10) / 10;
+            stan.bilans = Math.round(stan.bilans * 10) / 10;
+            stan.inwestycje = Math.round(stan.inwestycje * 10) / 10;
+            stan.militaria = Math.round(stan.militaria * 10) / 10;
+            stan.zadowolenie = Math.max(0, Math.min(100, stan.zadowolenie));
+            stan.populalnosc = Math.max(0, Math.min(100, stan.populalnosc));
+            
+            aktualizujInterfejs();
+            wyswietlKomunikat(msg);
+        }
+    }
+
+    function zaksiegujKoniec() {
+        zmienEkran('screen-end');
+        let podsumowanie = `Państwo: <strong>${stan.nazwa}</strong><br>`;
+        podsumowanie += `Wynik celów inflacyjnych: <strong>${stan.sukcesy} / ${stan.maxTur}</strong> udanych kwartałów.<br><br>`;
+        podsumowanie += `Końcowe poparcie polityczne: <strong>${stan.populalnosc}%</strong><br>`;
+        podsumowanie += `Końcowe zadowolenie społeczne: <strong>${stan.zadowolenie}%</strong><br>`;
+        podsumowanie += `Końcowa siła militarna: <strong>${stan.militaria}% PKB</strong><br><br>`;
+        
+        if (stan.sukcesy >= 2 && stan.populalnosc >= 40) {
+            podsumowanie += "🏆 <strong>Przetrwałeś kryzys!</strong> Udało Ci się lawirować między geopolityką a stabilnością monetarną.";
+        } else {
+            podsumowanie += "💡 <strong>Trudna kadencja!</strong> Presja zewnętrzna i decyzje monetarne odbiły się na stabilności państwa. Czas na wyciągnięcie wniosków na zajęciach!";
+        }
+        document.getElementById('koniec-podsumowanie').innerHTML = podsumowanie;
+    }
+
+    function resetujGre() {
+        zmienEkran('screen-start');
+    }
+</script>
+
+</body>
+</html>
