@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Banker Tycoon</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#94a3b8;--border:#334155;--primary:#3b82f6;--pd:#2563eb;--ok:#22c55e;--warn:#eab308;--bad:#ef4444;}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:15px;display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
+.container{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.55);width:100%;max-width:900px;padding:24px}
+h1{font-size:1.5rem;color:var(--primary);text-align:center;margin-top:0}
+.form-group{margin-bottom:20px}
+.form-group>label{display:block;margin-bottom:8px;font-weight:600}
+.form-control{width:100%;padding:12px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:1rem}
+.form-control.error{border-color:var(--bad)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-bottom:18px;max-height:400px;overflow-y:auto;padding-right:4px}
+.stat-card{background:#0f172a;border:1px solid var(--border);padding:9px 12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:.87rem;cursor:pointer;transition:border-color .18s,transform .12s;user-select:none}
+.stat-card:hover{border-color:var(--primary);transform:scale(1.025)}
+.stat-card span{color:var(--muted)}
+.status-green{color:var(--ok)}.status-yellow{color:var(--warn)}.status-red{color:var(--bad)}
+.screen{display:none}.screen.active{display:block}
+.btn{display:block;width:100%;padding:12px;margin:10px 0;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background .2s;text-align:center}
+.btn:hover{background:var(--pd)}
+.btn-sm{display:inline-block;width:auto;padding:5px 12px;margin:0;font-size:.8rem;border-radius:6px}
+.btn-xs{display:inline-block;width:auto;padding:3px 9px;margin:0 2px;font-size:.77rem;border-radius:5px}
+.btn-secondary{background:#475569}.btn-secondary:hover{background:#334155}
+.btn-warning{background:#b45309}.btn-warning:hover{background:#92400e}
+.btn-danger{background:var(--bad)}.btn-danger:hover{background:#dc2626}
+.btn-success{background:#16a34a}.btn-success:hover{background:#15803d}
+.btn-trump{background:#1d4ed8}.btn-trump:hover{background:#1e40af}
+.btn-advisor{background:#7c3aed}.btn-advisor:hover{background:#6d28d9}
+.header-info{display:flex;justify-content:space-between;align-items:center;background:#0f172a;border:1px solid var(--border);padding:8px 15px;border-radius:8px;margin-bottom:14px;font-weight:bold;font-size:.88rem;flex-wrap:wrap;gap:6px}
+.log-box{background:#0f172a;border:1px solid var(--border);padding:12px;border-radius:8px;margin-top:14px;min-height:58px;font-size:.93rem;line-height:1.6}
+.event-box{background:#451a03;border:2px solid var(--warn);padding:14px;border-radius:8px;margin-bottom:14px;color:#fef3c7}
+.event-box h3{margin-top:0;color:#f59e0b}
+.event-box.positive{background:#052e16;border-color:#16a34a;color:#bbf7d0}
+.event-box.positive h3{color:#4ade80}
+.event-box.alt{background:#1e1b4b;border-color:#6366f1;color:#c7d2fe}
+.event-box.alt h3{color:#a5b4fc}
+.event-box.trump{background:#0c1e3d;border-color:#3b82f6;color:#dbeafe}
+.event-box.trump h3{color:#60a5fa}
+.event-box.public{background:#1e0b3a;border-color:#a855f7;color:#e9d5ff}
+.event-box.public h3{color:#c084fc}
+.event-box.conf{background:#052e16;border-color:#10b981;color:#bbf7d0}
+.event-box.conf h3{color:#4ade80}
+.event-box.military{background:#4a0404;border-color:#ef4444;color:#fecaca}
+.event-box.military h3{color:#f87171}
+.event-box.stock{background:#1e2a4a;border-color:#3b82f6;color:#dbeafe}
+.event-box.stock h3{color:#60a5fa}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;justify-content:center;align-items:center;padding:14px}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.7)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-title{font-size:1.05rem;font-weight:bold;color:var(--primary)}
+.modal-close{cursor:pointer;color:var(--muted);font-size:1.3rem;background:none;border:none;padding:0 4px}
+.modal-close:hover{color:var(--text)}
+.tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{padding:5px 13px;border:1px solid var(--border);background:#0f172a;color:var(--muted);border-radius:6px;cursor:pointer;font-size:.8rem}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pf-summary{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px}
+.pf-si{text-align:center}.pf-si .lbl{font-size:.7rem;color:var(--muted)}.pf-si .val{font-size:1.1rem;font-weight:bold}
+.asset-card{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.asset-name{font-weight:600}
+.asset-val{text-align:right}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.trade-savings{background:linear-gradient(135deg,#1e3a4c,#0f2233);border:1px solid #2563eb;border-radius:9px;padding:14px 16px;margin-bottom:14px}
+.trade-savings .sav-title{font-size:1rem;font-weight:700;color:#60a5fa;margin-bottom:4px}
+.trade-savings .sav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.trade-savings .sav-amt{font-size:1.4rem;font-weight:800;color:var(--ok)}
+.trade-savings .sav-yield{background:#0f172a;border:1px solid #334155;border-radius:6px;padding:4px 10px;font-size:.82rem;color:var(--warn)}
+.trade-row{background:#0f172a;border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:9px}
+.trade-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:4px}
+.trade-asset-name{font-weight:700;font-size:.95rem}
+.trade-asset-val{text-align:right;font-size:.88rem}
+.trade-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.trade-input{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 9px;font-size:.82rem;width:120px}
+.trade-input:focus{outline:none;border-color:var(--primary)}
+.delta-pos{color:var(--ok)}.delta-neg{color:var(--bad)}
+.history-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:8px}
+.history-table th{background:#0f172a;padding:7px 8px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.history-table td{padding:5px 8px;border-bottom:1px solid #172033;vertical-align:middle}
+.history-table tr:hover td{background:rgba(59,130,246,.06)}
+.info-box{background:#1e3a4c;border:1px solid #2563eb;border-radius:8px;padding:12px 15px;margin-bottom:16px;font-size:.88rem;line-height:1.6;color:#bfdbfe}
+.canvas-wrap{position:relative;width:100%}
+.hint{color:var(--muted);font-size:.75rem;margin-top:6px;text-align:center}
+.quiz-box{background:#12103a;border:2px solid #818cf8;padding:14px;border-radius:8px;margin-bottom:14px;color:#e0e7ff}
+.quiz-box h3{margin-top:0;color:#a5b4fc}
+.quiz-opt{display:block;width:100%;padding:10px 14px;margin:6px 0;background:#0f172a;border:1px solid #4338ca;color:#e0e7ff;border-radius:7px;font-size:.9rem;cursor:pointer;text-align:left}
+.quiz-opt:hover:not(:disabled){background:#1e1b4b}
+.quiz-opt:disabled{cursor:not-allowed;opacity:.6}
+.quiz-opt.correct{background:#14532d!important;border-color:var(--ok)!important;opacity:1}
+.quiz-opt.wrong{background:#450a0a!important;border-color:var(--bad)!important;opacity:1}
+.quiz-result{font-size:.84rem;line-height:1.6;margin-top:10px;padding:10px;background:#0f172a;border-radius:6px;display:none}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.mode-btn{padding:12px;background:#0f172a;border:2px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600}
+.mode-btn:hover{color:var(--text)}
+.mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mode-btn.mode-hard.active{background:#b45309;border-color:#b45309;color:#fff}
+.advisor-panel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.advisor-card{border-radius:8px;padding:10px 12px;font-size:.82rem;line-height:1.45}
+.advisor-hawk{background:#2a0a0a;border:1px solid #7f1d1d;color:#fecaca}
+.advisor-dove{background:#0a1a2a;border:1px solid #1e40af;color:#bfdbfe}
+.advisor-card .adv-name{font-weight:700;font-size:.85rem;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.advisor-card .adv-bias{font-size:.68rem;padding:1px 6px;border-radius:4px;font-weight:500}
+.advisor-hawk .adv-bias{background:#7f1d1d;color:#fecaca}
+.advisor-dove .adv-bias{background:#1e40af;color:#bfdbfe}
+@media(max-width:600px){.advisor-panel{grid-template-columns:1fr}}
+.toast-container{position:fixed;top:20px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+.toast{background:linear-gradient(135deg,#1a4d2e,#0f3a20);border:2px solid var(--ok);border-radius:10px;padding:10px 16px;color:#fff;font-size:.88rem;box-shadow:0 4px 20px rgba(0,0,0,.6);animation:toastIn .3s ease-out;max-width:340px;font-weight:500}
+.toast.info{background:linear-gradient(135deg,#1e3a8a,#172554);border-color:var(--primary)}
+.toast.gold{background:linear-gradient(135deg,#78350f,#422006);border-color:#fbbf24}
+.toast.danger{background:linear-gradient(135deg,#7f1d1d,#450a0a);border-color:var(--bad)}
+.toast.fade{animation:toastOut .4s ease-in forwards}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+.end-actions{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.end-actions .btn{margin:0;flex:1;min-width:140px}
+.explain-box{background:#1a1a2e;border:1px solid #6366f1;border-radius:8px;padding:12px 15px;margin-bottom:14px}
+.explain-box h4{color:#a5b4fc;margin:0 0 8px 0;font-size:.95rem}
+.explain-box ul{margin:6px 0;padding-left:20px;font-size:.85rem;line-height:1.6;color:#c7d2fe}
+.achiev-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.achiev-badge{background:linear-gradient(135deg,#422006,#1c1917);border:1px solid #ca8a04;border-radius:8px;padding:5px 10px;font-size:.78rem;color:#fde68a}
+.achiev-badge .ach-lbl{font-weight:700;color:#fbbf24}
+.report-box{background:#0f172a;border:2px solid #6366f1;border-radius:10px;padding:14px;margin:16px 0}
+.report-box h4{margin:0 0 8px 0;color:#a5b4fc}
+.report-box textarea{width:100%;min-height:140px;padding:10px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:8px;font-family:inherit;font-size:.88rem;line-height:1.5;resize:vertical}
+.report-box textarea:focus{outline:none;border-color:var(--primary)}
+.report-hint{font-size:.72rem;color:var(--muted);margin-top:6px}
+.ranking-list{margin-top:10px}
+.rank-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:5px;font-size:.85rem}
+.rank-row.rank-1{background:linear-gradient(90deg,#422006,#1c1917);border-color:#fbbf24}
+.rank-row.rank-2{background:linear-gradient(90deg,#1e293b,#0f172a);border-color:#94a3b8}
+.rank-row.rank-3{background:linear-gradient(90deg,#331d0e,#1c1917);border-color:#b45309}
+.rank-pos{font-weight:800;font-size:1rem;width:32px}
+.rank-name{flex:1;padding-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-pts{font-weight:700;color:var(--warn)}
+.rank-mode{font-size:.7rem;opacity:.7;margin-left:6px}
+.no-ranking{text-align:center;color:var(--muted);font-size:.85rem;padding:20px}
+.kondycja-warning{background:#3f1d1d;border:2px solid var(--bad);border-radius:8px;padding:10px 14px;margin-bottom:12px;color:#fecaca;font-size:.85rem;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.manual-box{background:#0f172a;border:1px solid #475569;border-radius:10px;padding:14px 18px;margin-top:16px;color:#cbd5e1;font-size:.85rem;line-height:1.65}
+.manual-box h3{color:#60a5fa;margin:0 0 10px 0;font-size:1.05rem}
+.manual-box p{margin:6px 0}
+.manual-box strong{color:#93c5fd}
+.stock-comparison{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.stock-card{background:#0f172a;border:2px solid #334155;border-radius:8px;padding:12px}
+.stock-card h4{margin:0 0 8px 0;color:#60a5fa;font-size:.95rem}
+.stock-metric{display:flex;justify-content:space-between;padding:3px 0;font-size:.82rem;border-bottom:1px dashed #1e293b}
+.stock-metric:last-child{border-bottom:none}
+.stock-metric .lbl{color:var(--muted)}
+.stock-metric .val{font-weight:600}
+@media(max-width:600px){.stock-comparison{grid-template-columns:1fr}}
+.advisor-box{background:#1e1b4b;border:1px solid #7c3aed;border-radius:8px;padding:12px;margin-top:10px;font-size:.85rem;line-height:1.5;color:#ddd6fe}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div id="modal-wykres" class="modal-overlay" onclick="closeOnOverlay(event,'modal-wykres')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title" id="modal-wykres-tytul">Wykres</div><button class="modal-close" onclick="zamknijModal('modal-wykres')">✕</button></div>
+    <div class="canvas-wrap"><canvas id="wykres-canvas"></canvas></div>
+  </div>
+</div>
+
+<div id="modal-portfel" class="modal-overlay" onclick="closeOnOverlay(event,'modal-portfel')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">💼 Twój Portfel</div><button class="modal-close" onclick="zamknijModal('modal-portfel')">✕</button></div>
+    <div class="pf-summary" id="pf-summary"></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-btn-aktywa" onclick="showTab('aktywa')">📊 Aktywa</button>
+      <button class="tab-btn" id="tab-btn-handel" onclick="showTab('handel')">🔄 Handel</button>
+      <button class="tab-btn" id="tab-btn-wykresy" onclick="showTab('wykresy')">📈 Wykresy</button>
+    </div>
+    <div id="tab-aktywa"><div id="pf-asset-list"></div></div>
+    <div id="tab-handel" style="display:none"><div id="pf-trade-panel"></div></div>
+    <div id="tab-wykresy" style="display:none"><div class="canvas-wrap"><canvas id="pf-chart-canvas"></canvas></div><p class="hint">Indeks ceny – start = 100.</p></div>
+  </div>
+</div>
+
+<div id="modal-ranking" class="modal-overlay" onclick="closeOnOverlay(event,'modal-ranking')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">🏆 Ranking graczy</div><button class="modal-close" onclick="zamknijModal('modal-ranking')">✕</button></div>
+    <div id="ranking-content"></div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:12px;text-align:center">ℹ️ Ranking lokalny (localStorage).</p>
+    <button class="btn btn-danger" onclick="wyczyscRanking()" style="margin-top:12px;font-size:.8rem;padding:8px">🗑️ Wyczyść ranking</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="screen-start" class="screen active">
+    <h1>🏦 Central Banker Tycoon</h1>
+    <p style="color:var(--muted)">JESTEŚ PREZESEM BANKU CENTRALNEGO. 20 kwartałów, 3 kryzysy, 8 inwestycji, 3 quizy, 2 eventy Trumpa, wystąpienia publiczne i konferencje. Militaria, wojny, realne PKB, doradca finansowy i ranking.</p>
+    <div class="form-group" style="margin-top:20px">
+      <label for="input-nazwa">Nazwa Twojego Państwa: <span style="color:var(--bad)">*</span></label>
+      <input type="text" id="input-nazwa" class="form-control" value="" placeholder="Wpisz nazwę (min. 3 znaki)...">
+      <div id="name-error" style="color:var(--bad);font-size:.82rem;margin-top:6px;display:none"></div>
+    </div>
+    <div class="form-group">
+      <label>Poziom trudności:</label>
+      <div class="mode-toggle">
+        <div class="mode-btn active" id="mode-normal" onclick="ustawTryb('normal')"><div style="font-size:1rem;margin-bottom:2px">🎯 Normalny</div><div style="font-size:.72rem;opacity:.8">Cel: 2–3,5% | Start: 6,5%</div></div>
+        <div class="mode-btn mode-hard" id="mode-hard" onclick="ustawTryb('hard')"><div style="font-size:1rem;margin-bottom:2px">🔥 Trudny</div><div style="font-size:.72rem;opacity:.8">Cel: 2–2,5% | Start: 8%</div></div>
+      </div>
+    </div>
+    <div class="info-box">
+      💵 <strong>Kapitał: $1,000,000</strong> | 💰 <strong>Pensja: $24,000/kwartał</strong><br>
+      🎤 <strong>Wystąpienia publiczne</strong> – ABCD o polityce, co drugi kwartał<br>
+      📊 <strong>Wybór akcji</strong> – 5 kwartałów, wskaźniki P/E, P/S, P/BV, ROE, wzrost<br>
+      🎯 <strong>Konferencje</strong> – 3 kwartały, wskaźniki finansowe ±2% na portfelu<br>
+      🛡️ <strong>Militaria</strong> – amortyzacja, wojny, event dodruku<br>
+      💡 <strong>Doradca</strong> – wyjaśnia wskaźniki za $10,000
+    </div>
+    <button class="btn" onclick="rozpocznijGre()">Rozpocznij kadencję</button>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><button class="btn btn-secondary" onclick="pokazRanking()">🏆 Zobacz ranking graczy</button></div>
+    <div class="manual-box">
+      <h3>📖 Instrukcja obsługi</h3>
+      <p><strong>🎯 Cel:</strong> 20 kwartałów, polityka monetarna, portfel, punkty, ranking.</p>
+      <p><strong>🎮 Sterowanie:</strong> Decyzje o stopach, kryzysy, inwestycje, quizy, Trump, wystąpienia.</p>
+      <p><strong>⭐ Punkty:</strong> Reguła Taylora – im lepsze dopasowanie do inflacji i PKB, tym więcej punktów. Quizy: +50/+100/+100 vs -25/-50/-50. Inwestycje: +40/-20. Akcje: +30/-15. Konferencja: +15/-15.</p>
+      <p><strong>💼 Portfel:</strong> Start $1M + pensja. Aktywa: akcje, obligacje stałe (1% kw. kuponu, kurs spada gdy stopy rosną) i zmienne (kupon = stopa/4), nieruchomości, złoto.</p>
+      <p><strong>📊 Wybór akcji:</strong> W 5 kwartałach porównujesz 2 spółki po P/E, P/S, P/BV, ROE, wzroście. Poprawny wybór: +15% z 20% portfela. Zły: -10%. Doradca ($10k) wyjaśnia.</p>
+      <p><strong>🎯 Konferencje:</strong> 3 kwartały z pytaniem o wskaźniki. Dobra odp: +2% na portfelu, +15 pkt. Zła: -2%, -15 pkt.</p>
+      <p><strong>🎤 Wystąpienia:</strong> Co drugi kwartał ABCD. Dobra: +5% poparcia, +3% na akcjach/obligacjach, +20 pkt, 25% szans +$1000 pensji. Zła: -5%, -3%, -10 pkt, 20% szans -$1000.</p>
+      <p><strong>🛡️ Militaria:</strong> -0,1 p.p./kwartał. &lt;1% → event dodruku. Druk: +2,0 p.p. ale 8% wojny. Brak druku: 12% (0,5–1%) lub 19% (&lt;0,5%). 1–10%: 1% szans wojny. Wojna = koniec gry.</p>
+      <p><strong>🧠 Kondycja psych.:</strong> Start 100. &lt;20 → 20% szans błędu. &lt;0 → wypalenie = koniec.</p>
+      <p><strong>⚠️ Popularność:</strong> &lt;10% → 10% szans rezygnacji co kwartał.</p>
+    </div>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <div class="header-info">
+      <span id="panstwo-tytul">Państwo</span>
+      <span id="tura-tytul">Kwartał 1 / 20</span>
+      <span id="tryb-tytul" style="font-size:.8rem"></span>
+      <span id="punkty-tytul" style="color:var(--warn)">⭐ Punkty: 0</span>
+      <button class="btn btn-sm btn-secondary" onclick="otworzPortfel()" style="margin:0" id="btn-portfel">💼 Portfel</button>
+    </div>
+    <div id="kondycja-warning" class="kondycja-warning" style="display:none"></div>
+    <div class="stats-grid">
+      <div class="stat-card" onclick="pokazWykres('populacja','Populacja (mln)')"><span>Populacja:</span><strong id="s-pop">38.0 mln</strong></div>
+      <div class="stat-card" onclick="pokazWykres('zadowolenie','Zadowolenie (%)')"><span>Zadowolenie:</span><strong id="s-zadowolenie">65%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('pkb','PKB nominalny (%)')"><span>PKB nom.:</span><strong id="s-pkb">2.5%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('pkbReal','PKB realne (per capita)')"><span>PKB realne:</span><strong id="s-pkb-real">2.5%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('inflacja','Inflacja CPI (%)')"><span>Inflacja:</span><strong id="s-inflacja">6.5%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('bezrobocie','Bezrobocie (%)')"><span>Bezrobocie:</span><strong id="s-bezrobocie">5.2%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('stopy','Stopy ref. (%)')"><span>Stopy:</span><strong id="s-stopy">5.0%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('dlug','Dług (% PKB)')"><span>Dług:</span><strong id="s-dlug">52.0%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('bilans','Bilans płatniczy')"><span>Bilans:</span><strong id="s-bilans">-1.5%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('gini','Gini')"><span>Gini:</span><strong id="s-gini">0.32</strong></div>
+      <div class="stat-card" onclick="pokazWykres('podzial','Podział społ.')"><span>Podział:</span><strong id="s-podzial">4.0</strong></div>
+      <div class="stat-card" onclick="pokazWykres('inwestycje','Inwestycje')"><span>Inwestycje:</span><strong id="s-inwestycje">21.0%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('prod','Produktywność')"><span>Produktywność:</span><strong id="s-prod">100 pkt</strong></div>
+      <div class="stat-card" onclick="pokazWykres('populalnosc','Popularność')"><span>Popularność:</span><strong id="s-populalnosc">50%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('militaria','Militaria (% PKB)')"><span>Militaria:</span><strong id="s-militaria">2.1%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('gielda','Giełda')"><span>🏛️ Giełda:</span><strong id="s-gielda">1000</strong></div>
+      <div class="stat-card" onclick="pokazWykres('gielda','Giełda')"><span>Nominalnie:</span><strong id="s-gielda-nom">+0.0%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('gielda','Giełda')"><span>Realnie:</span><strong id="s-gielda-real">+0.0%</strong></div>
+      <div class="stat-card" onclick="pokazWykres('kondycjaPsychiczna','Kondycja psychiczna')" style="border-color:#7c3aed"><span>🧠 Kondycja:</span><strong id="s-kondycja">100</strong></div>
+    </div>
+    <div id="advisor-panel" class="advisor-panel"></div>
+    <div id="obszar-decyzji">
+      <div id="wystapienie-publiczne" style="display:none"></div>
+      <div id="konferencja-finansowa" style="display:none"></div>
+      <div id="military-crisis" style="display:none"></div>
+      <div id="stock-pick" style="display:none"></div>
+      <p style="margin-top:14px;margin-bottom:5px"><strong>Podejmij decyzję:</strong></p>
+      <div id="przyciski-standardowe">
+        <button class="btn btn-warning" onclick="wykonajRuch(1)">📈 Podwyżka stóp (+1.0%)</button>
+        <button class="btn btn-secondary" onclick="wykonajRuch(2)">⚖️ Utrzymaj stopy</button>
+        <button class="btn" onclick="wykonajRuch(3)">📉 Obniżka stóp (-1.0%)</button>
+      </div>
+      <div id="przyciski-kryzys-granica" style="display:none">
+        <div class="event-box"><h3>⚠️ Wrogie wojska na granicy!</h3><p>Rząd naciska, by uruchomić rotę drukarską.</p></div>
+        <button class="btn btn-danger" onclick="wykonajKryzysGranica(1)">🖨️ Drukuj na militaria</button>
+        <button class="btn btn-secondary" onclick="wykonajKryzysGranica(2)">🛡️ Odmów</button>
+      </div>
+      <div id="przyciski-kryzys-gielda" style="display:none">
+        <div class="event-box"><h3>📉 Krach na Wall Street!</h3><p>Panika bankowa.</p></div>
+        <button class="btn" onclick="wykonajKryzysGielda(1)">🏦 Ratuj banki</button>
+        <button class="btn btn-danger" onclick="wykonajKryzysGielda(2)">🚫 Dyscyplina</button>
+      </div>
+      <div id="przyciski-kryzys-naftowy" style="display:none">
+        <div class="event-box" style="background:#450a0a;border-color:#ef4444"><h3 style="color:#f87171">🛢️ Kryzys Naftowy!</h3><p>Szok podażowy ~15%.</p></div>
+        <button class="btn btn-danger" onclick="wykonajKryzysNaftowy(1)">⚡ Szok Volckera</button>
+        <button class="btn btn-secondary" onclick="wykonajKryzysNaftowy(2)">🕊️ Miękka polityka</button>
+      </div>
+      <div id="przyciski-alt-krypto" style="display:none"></div>
+      <div id="przyciski-alt-startup" style="display:none"></div>
+      <div id="przyciski-alt-deweloper" style="display:none"></div>
+      <div id="przyciski-trump" style="display:none"></div>
+      <div id="przyciski-quiz-latwy" style="display:none">
+        <div class="quiz-box">
+          <h3>🎲 Prawdopodobieństwo recesji</h3>
+          <p>Przez ostatnie <strong>12 kwartałów</strong> recesja była <strong>3 razy</strong>. Prawdopodobieństwo w następnym kwartale?</p>
+          <button class="quiz-opt" id="ql-A" data-correct="0" onclick="odpowiedzQuiz('latwy',0,'ql-A')">A) 3%</button>
+          <button class="quiz-opt" id="ql-B" data-correct="0" onclick="odpowiedzQuiz('latwy',1,'ql-B')">B) 25% (3÷12)</button>
+          <button class="quiz-opt" id="ql-C" data-correct="0" onclick="odpowiedzQuiz('latwy',2,'ql-C')">C) 33%</button>
+          <button class="quiz-opt" id="ql-D" data-correct="0" onclick="odpowiedzQuiz('latwy',3,'ql-D')">D) 50%</button>
+          <button class="quiz-opt" id="ql-E" data-correct="1" onclick="odpowiedzQuiz('latwy',4,'ql-E')">E) Empirycznie ok. 25%, ale zależy to też od aktualnego i przyszłego PKB</button>
+          <div id="ql-result" class="quiz-result"></div>
+        </div>
+      </div>
+      <div id="przyciski-quiz-bayes" style="display:none">
+        <div class="quiz-box">
+          <h3>🧠 Twierdzenie Bayesa</h3>
+          <p>Choroba u <strong>1%</strong>. Test: czułość <strong>99%</strong>, fałszywy pozytyw <strong>5%</strong>. Wyszedłeś +. Prawdopodobieństwo choroby?</p>
+          <button class="quiz-opt" id="qb-A" data-correct="0" onclick="odpowiedzQuiz('bayes',0,'qb-A')">A) 99%</button>
+          <button class="quiz-opt" id="qb-B" data-correct="0" onclick="odpowiedzQuiz('bayes',1,'qb-B')">B) 50%</button>
+          <button class="quiz-opt" id="qb-C" data-correct="1" onclick="odpowiedzQuiz('bayes',2,'qb-C')">C) ok. 17%</button>
+          <button class="quiz-opt" id="qb-D" data-correct="0" onclick="odpowiedzQuiz('bayes',3,'qb-D')">D) 5%</button>
+          <div id="qb-result" class="quiz-result"></div>
+        </div>
+      </div>
+      <div id="przyciski-quiz-kelly" style="display:none">
+        <div class="quiz-box">
+          <h3>🧠 Kryterium Kelly'ego</h3>
+          <p>Gra: <strong>60%</strong> szans na +100%, <strong>40%</strong> na -100%. Jaka część kapitału maksymalizuje wzrost?</p>
+          <button class="quiz-opt" id="qk-A" data-correct="0" onclick="odpowiedzQuiz('kelly',0,'qk-A')">A) 10%</button>
+          <button class="quiz-opt" id="qk-B" data-correct="1" onclick="odpowiedzQuiz('kelly',1,'qk-B')">B) 20%</button>
+          <button class="quiz-opt" id="qk-C" data-correct="0" onclick="odpowiedzQuiz('kelly',2,'qk-C')">C) 50%</button>
+          <button class="quiz-opt" id="qk-D" data-correct="0" onclick="odpowiedzQuiz('kelly',3,'qk-D')">D) 60%</button>
+          <div id="qk-result" class="quiz-result"></div>
+        </div>
+      </div>
+    </div>
+    <div class="log-box" id="komunikat">Gospodarka wykazuje napięcia inflacyjne.</div>
+  </div>
+
+  <div id="screen-end" class="screen">
+    <h1 id="tytul-koniec">📊 Koniec Gry</h1>
+    <div id="achiev-list"></div>
+    <div id="koniec-podsumowanie" style="color:var(--muted);font-size:.87rem;line-height:1.65"></div>
+    <div id="wyjasnienie-box"></div>
+    <div class="report-box">
+      <h4>📝 Raport refleksyjny</h4>
+      <p style="font-size:.85rem;color:var(--muted);margin:0 0 8px 0">Napisz refleksję (min. 30 znaków):</p>
+      <textarea id="report-text" placeholder="Wpisz swoją refleksję..."></textarea>
+      <div class="report-hint" id="report-hint">Min. 30 znaków. Zapisane w rankingu.</div>
+      <button class="btn btn-success" onclick="zapiszRaportIRanking()" id="btn-save-report" style="margin-top:10px">💾 Zapisz raport i dodaj do rankingu</button>
+    </div>
+    <div class="end-actions">
+      <button class="btn" onclick="kopiujPodsumowanie()">📋 Kopiuj podsumowanie</button>
+      <button class="btn btn-secondary" onclick="pokazRanking()">🏆 Ranking</button>
+      <button class="btn btn-secondary" onclick="resetujGre()">🔄 Zagraj ponownie</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// STAN
+// ================================================================
+const LS_RANKING = 'cbTycoon_ranking_v3';
+const PF_START = 1000000;
+const MAX_TUR = 20;
+
+// Harmonogram kwartałów
+const STOCK_PICK_QUARTERS = [1, 4, 7, 15, 17];
+const FINANCE_CONFERENCE_QUARTERS = [3, 9, 19];
+const APPEARANCE_QUARTERS = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
+
+let stan = {};
+let pf = {};
+let historiaStatystyk = [];
+let historiaDecyzji = [];
+let chartInst = null, pfChartInst = null;
+let trumpEventData = null;
+let pozytywneNaTure = {};
+
+// ================================================================
+// PULE PYTAŃ
+// ================================================================
+const POLICY_QUESTIONS = [
+  {q:'Co dzieje się z inflacją, gdy bank centralny podnosi stopy?',options:['Rośnie','Spada','Bez zmian','Losowo'],correct:1},
+  {q:'Stopa referencyjna to:',options:['Stopa dla klientów','Stopa, po której BC pożycza bankom','Stopa bezrobocia','Stopa PKB'],correct:1},
+  {q:'Krzywa Phillipsa opisuje związek między:',options:['Inflacją a bezrobociem','Inflacją a PKB','Stopami a walutą','Długiem a PKB'],correct:0},
+  {q:'Luzowanie ilościowe (QE) to:',options:['Obniżka stóp','Skup aktywów przez BC','Podwyżka podatków','Większe wydatki rządu'],correct:1},
+  {q:'Które NIE jest narzędziem polityki monetarnej?',options:['Operacje otwartego rynku','Stopa rezerw','Podatki','Stopa depozytowa'],correct:2},
+  {q:'Reguła Taylora wiąże stopy z:',options:['Tylko inflacją','Tylko PKB','Inflacją i luką produktową','Kursem walutowym'],correct:2},
+  {q:'Cena obligacji stałoprocentowej przy rosnących stopach:',options:['Rośnie','Spada','Bez zmian','Zależy od inflacji'],correct:1},
+  {q:'Deflacja to:',options:['Inflacja 0%','Spadek ogólnego poziomu cen','Wzrost bezrobocia','Spadek PKB'],correct:1},
+  {q:'Cel inflacyjny NBP:',options:['0%','2,5% ± 1 p.p.','5%','10%'],correct:1},
+  {q:'Kto odpowiada za politykę monetarną strefy euro?',options:['Bundesbank','EBC','Bank Anglii','Fed'],correct:1},
+  {q:'Podwyżka stóp wpływa na kredyty hipoteczne:',options:['Tanieją','Drożeją','Bez zmian','Znikają'],correct:1},
+  {q:'Co to jest stagflacja?',options:['Wzrost PKB i inflacji','Spadek PKB i wysoka inflacja','Spadek inflacji i PKB','Wzrost PKB i spadek inflacji'],correct:1},
+  {q:'Który bank centralny jest najbardziej niezależny?',options:['Bank Rosji','EBC','NBP','Fed'],correct:1},
+  {q:'Stopa bezrobocia naturalnego w Polsce wynosi ok.:',options:['1-2%','3-5%','8-10%','15%'],correct:1},
+  {q:'Co oznacza "forward guidance"?',options:['Prognozę przyszłych stóp','Komunikat o przyszłej polityce','Podwyżkę stóp','Kurs walutowy'],correct:1},
+  {q:'Skup złota przez bank centralny:',options:['Zwiększa rezerwy','Zmniejsza rezerwy','Nie wpływa','Zawsze szkodzi'],correct:0},
+  {q:'Który wskaźnik mierzy inflację bazową?',options:['CPI','CPI po wyłączeniu żywności i energii','PKB','PPI'],correct:1},
+  {q:'Polityka fiskalna to domena:',options:['Banku centralnego','Rządu','Banków komercyjnych','NBP'],correct:1},
+  {q:'Co to jest "moral hazard"?',options:['Ryzyko nadużyć przy ochronie','Podatek','Stopa procentowa','Kurs walutowy'],correct:0},
+  {q:'Który bank centralny wprowadził ujemne stopy?',options:['Fed','EBC','NBP','Bank Szwajcarii'],correct:3}
+];
+
+const STOCK_QUESTIONS = [
+  {
+    title:'Wybór spółki bankowej',
+    companyA:{name:'Bank Bezpieczny',sector:'Bank',pe:8,pbv:0.9,ps:1.5,roe:12,growth:8},
+    companyB:{name:'Bank Ryzykowny',sector:'Bank',pe:18,pbv:2.2,ps:3.5,roe:7,growth:3},
+    correct:'A',
+    explanation:'Bank Bezpieczny ma niższe P/E (8 vs 18), niższe P/BV (0,9 vs 2,2), wyższe ROE (12% vs 7%) i wyższy wzrost (8% vs 3%). Dominuje we wszystkich wskaźnikach.'
+  },
+  {
+    title:'Wybór spółki technologicznej',
+    companyA:{name:'TechGigant',sector:'Tech',pe:45,ps:12,pbv:8,roe:35,growth:10},
+    companyB:{name:'TechMid',sector:'Tech',pe:22,ps:4,pbv:3,roe:18,growth:15},
+    correct:'B',
+    explanation:'Mimo że TechGigant ma wyższe ROE, TechMid jest znacznie tańszy. PEG dla TechGigant to 45/10=4,5, dla TechMid: 22/15≈1,47. TechMid jest tańszy za jednostkę wzrostu i ma niższe P/S oraz P/BV.'
+  },
+  {
+    title:'Wybór spółki handlowej',
+    companyA:{name:'SklepMaly',sector:'Handel',pe:12,ps:0.4,pbv:1.2,roe:18,growth:12},
+    companyB:{name:'SklepDuzy',sector:'Handel',pe:25,ps:1.2,pbv:2.5,roe:9,growth:4},
+    correct:'A',
+    explanation:'SklepMaly jest tańszy (niższe P/E, P/S, P/BV) i bardziej rentowny (ROE 18% vs 9%) przy wyższym wzroście (12% vs 4%). Klasyczna spółka wartościowa.'
+  },
+  {
+    title:'Wybór spółki energetycznej',
+    companyA:{name:'EnergiaSpokojna',sector:'Energia',pe:10,pbv:1.0,ps:0.8,roe:10,growth:3},
+    companyB:{name:'EnergiaRyzykowna',sector:'Energia',pe:30,pbv:3.0,ps:2.5,roe:5,growth:-5},
+    correct:'A',
+    explanation:'EnergiaSpokojna ma niższe wszystkie mnożniki, wyższe ROE i dodatni wzrost (3% vs -5%). EnergiaRyzykowna ma ujemny wzrost i jest 3x droższa.'
+  },
+  {
+    title:'Wybór spółki farmaceutycznej',
+    companyA:{name:'FarmaStara',sector:'Farmacja',pe:15,ps:2.0,pbv:2.0,roe:12,growth:2},
+    companyB:{name:'FarmaNowa',sector:'Farmacja',pe:40,ps:8.0,pbv:6,roe:25,growth:30},
+    correct:'B',
+    explanation:'Klasyczny wybór "wzrost vs wartość". FarmaNowa ma PEG = 40/30 ≈ 1,33 (bardzo tanio za wzrost), FarmaStara ma PEG = 15/2 = 7,5 (bardzo drogo za wzrost). Mimo wyższych mnożników FarmaNowa jest lepszą inwestycją długoterminową. To pytanie uczy pojęcia PEG.'
+  }
+];
+
+const FINANCE_CONFERENCE_QUESTIONS = [
+  {
+    q:'Co mierzy wskaźnik P/E?',
+    options:['Cenę do zysku na akcję','Cenę do przychodów','Cenę do wartości księgowej','Cenę do dywidendy'],
+    correct:0,
+    explanation:'P/E = Price/Earnings = Cena/Zysk. Pokazuje, ile rynek płaci za 1 zł zysku. Niskie P/E sugeruje niedowartościowanie (lub problemy), wysokie – oczekiwania wzrostu.'
+  },
+  {
+    q:'Jeśli ROE firmy wynosi 20%, a ROA 10%, co to oznacza?',
+    options:['Firma ma wysokie zadłużenie (dźwignię finansową)','Firma jest bardzo rentowna','Firma ma niskie zadłużenie','Firma traci pieniądze'],
+    correct:0,
+    explanation:'ROE = ROA × (Aktywa/Kapitał własny). Gdy ROE (20%) > ROA (10%), mnożnik wynosi 2, co oznacza, że firma finansuje połowę aktywów długiem. Wyższe ROE kosztem wyższego ryzyka.'
+  },
+  {
+    q:'Wskaźnik P/BV równy 0,8 oznacza, że:',
+    options:['Akcje są przewartościowane','Akcje są niedowartościowane (cena poniżej wartości księgowej)','Firma jest w upadłości','Firma ma wysokie zyski'],
+    correct:1,
+    explanation:'P/BV = Price/Book Value = Cena/Wartość księgowa. P/BV < 1 oznacza, że rynek wycenia firmę poniżej jej aktywów netto. Może to być okazja lub sygnał problemów (value trap).'
+  }
+];
+
+const QUIZ_ANSWERS = {latwy:4,bayes:2,kelly:1};
+const QUIZ_REWARDS = {latwy:{win:50,lose:-25,cash:0.005},bayes:{win:100,lose:-50,cash:0.01},kelly:{win:100,lose:-50,cash:0.01}};
+
+const ALT_INVEST = {
+  krypto:{title:'🚀 Krypto "MoonToken"',desc:'10% szans × +300%, 90% × -100%. EV ujemne.',probWin:0.10,zyskWin:3.0,zyskLose:-1.0,ev:-60,correct:'spasuj'},
+  startup:{title:'🚀 Startup "TechNova"',desc:'40% × +300%, 60% × -100%. EV dodatnie.',probWin:0.40,zyskWin:3.0,zyskLose:-1.0,ev:60,correct:'inwestuj'},
+  deweloper:{title:'🏢 Projekt "Nowe Horyzonty"',desc:'70% × +50%, 30% × -30%. EV dodatnie.',probWin:0.70,zyskWin:0.5,zyskLose:-0.3,ev:26,correct:'inwestuj'}
+};
+
+const POZYTYWNE = [
+  {emoji:'🌞',title:'Boom gospodarczy',desc:'Konsumpcja rośnie.',apply:s=>{s.pkb+=0.8;s.bezrobocie-=0.3;s.zadowolenie+=5;s.populalnosc+=3;}},
+  {emoji:'💎',title:'Odkrycie złóż',desc:'Eksport rośnie.',apply:s=>{s.bilans+=1.5;s.inwestycje+=2;s.pkb+=0.4;}},
+  {emoji:'🚀',title:'Sukces startupów',desc:'Jednorożec debiutuje.',apply:s=>{s.prod+=5;s.gielda*=1.05;s.zadowolenie+=3;}},
+  {emoji:'🌾',title:'Dobre zbiory',desc:'Ceny żywności spadają.',apply:s=>{s.inflacja-=0.8;s.zadowolenie+=4;}},
+  {emoji:'🏖️',title:'Boom turystyczny',desc:'Turyści tłumnie przyjeżdżają.',apply:s=>{s.bilans+=1;s.zadowolenie+=5;s.populalnosc+=4;}},
+  {emoji:'🎓',title:'Reforma edukacji',desc:'Nowe talenty na rynku.',apply:s=>{s.prod+=3;s.inwestycje+=1;s.zadowolenie+=2;}}
+];
+
+const TRUMP_EVENTS = [
+  {emoji:'🐦',title:'Trump: "Fed za wolny"',desc:'"Fed jest za wolny! Obniżki TERAZ!"',effects:{akcje:1.03,obligacje:-0.01,zloto:1.01},populalnosc:0},
+  {emoji:'💥',title:'Trump ogłasza cła',desc:'Nowe cła zaskakują rynki.',effects:{akcje:0.96,gielda:0.96},populalnosc:0},
+  {emoji:'🥇',title:'Trump chwali złoto',desc:'"Złoto to jedyna prawdziwa waluta!"',effects:{zloto:1.06},populalnosc:0},
+  {emoji:'🏠',title:'Trump krytykuje nieruchomości',desc:'"Polskie nieruchomości są przecenione!"',effects:{nieruchomosci:0.95},populalnosc:-2},
+  {emoji:'🏛️',title:'Trump chwali polskie obligacje',desc:'"Polskie obligacje to świetna inwestycja!"',effects:{obligacjeStale:1.04,obligacjeZmienne:1.04},populalnosc:3},
+  {emoji:'⚡',title:'Trump krytykuje bank centralny',desc:'"Prezes nie wie co robi!"',effects:{akcje:0.97,obligacjeStale:0.98},populalnosc:-5},
+  {emoji:'🤝',title:'Trump ogłasza porozumienie',desc:'Umowa handlowa – euforia.',effects:{akcje:1.05,obligacjeStale:1.02},populalnosc:3},
+  {emoji:'🌪️',title:'Trump grozi wojną celną',desc:'"Nałożymy 200% cła!"',effects:{akcje:0.93,gielda:0.94,zloto:1.02},populalnosc:-3},
+  {emoji:'📈',title:'Trump chwali giełdę',desc:'"Polska giełda to okazja stulecia!"',effects:{akcje:1.04,gielda:1.04},populalnosc:2},
+  {emoji:'🏦',title:'Trump krytykuje obligacje',desc:'"Kto kupuje polskie obligacje?!"',effects:{obligacjeStale:0.95,obligacjeZmienne:0.97},populalnosc:-2}
+];
+
+// ================================================================
+// HELPERY
+// ================================================================
+function fmtD(v){return Math.round(v).toLocaleString('en-US');}
+function wartoscPortfela(){return pf.gotowka+pf.akcje+pf.obligacjeStale+pf.obligacjeZmienne+pf.nieruchomosci+pf.zloto;}
+function savingsYield(){return Math.max(0,stan.stopy-3);}
+function snapshot(){
+  return {tura:stan.tura,populacja:stan.populacja,zadowolenie:stan.zadowolenie,pkb:stan.pkb,pkbReal:stan.pkb-((stan.populacja/38)-1)*100,
+    inflacja:stan.inflacja,bezrobocie:stan.bezrobocie,stopy:stan.stopy,dlug:stan.dlug,
+    bilans:stan.bilans,gini:stan.gini,podzial:stan.podzial,inwestycje:stan.inwestycje,
+    prod:stan.prod,populalnosc:stan.populalnosc,militaria:stan.militaria,
+    gielda:stan.gielda,portfelWartosc:wartoscPortfela(),kondycjaPsychiczna:stan.kondycjaPsychiczna};
+}
+function showToast(msg,cls){
+  let cont = document.getElementById('toast-container');if(!cont)return;
+  let t = document.createElement('div');t.className='toast '+(cls||'');t.innerHTML=msg;
+  cont.appendChild(t);setTimeout(()=>{t.classList.add('fade');setTimeout(()=>t.remove(),500)},4000);
+}
+function ustawTryb(t){if(typeof stan!=='object')stan={};stan.tryb=t;let mn=document.getElementById('mode-normal');if(mn)mn.classList.toggle('active',t==='normal');let mh=document.getElementById('mode-hard');if(mh)mh.classList.toggle('active',t==='hard');}
+
+// ================================================================
+// RESET
+// ================================================================
+function resetStan(){
+  let hard = stan.tryb === 'hard';
+  stan = {
+    nazwa:'',tura:1,maxTur:MAX_TUR,punkty:0,populacja:38.0,
+    zadowolenie:hard?58:65,pkb:hard?1.8:2.5,inflacja:hard?8.0:6.5,
+    bezrobocie:hard?6.5:5.2,stopy:hard?4.0:5.0,dlug:hard?58.0:52.0,
+    bilans:hard?-2.5:-1.5,gini:0.32,podzial:hard?4.8:4.0,
+    inwestycje:hard?19.0:21.0,prod:100,populalnosc:hard?42:50,
+    militaria:2.1,sukcesy:0,gielda:1000,inflacjaCumul:0,
+    tryb:hard?'hard':'normal',inflacjaTargetMin:2.0,inflacjaTargetMax:hard?2.5:3.5,
+    crisisMultiplier:hard?1.5:1.0,poprzednieStopy:hard?4.0:5.0,
+    consecutiveTarget:0,achievements:[],cumulativeSalary:0,salary:24000,
+    pendingQuizModifier:null,rankingSaved:false,
+    kondycjaPsychiczna:100,przemeczenieZdarzylo:0,
+    appearanceDone:{},confDone:{},rateDone:{},stockDone:{},militaryDone:{},
+    pendingMilitaryCrisis:false,currentAppearance:null,currentConf:null,currentStock:null,
+    pendingRateMsg:null,pendingRateLabel:null,advisorUsed:{}
+  };
+  pf = {gotowka:PF_START,akcje:0,obligacjeStale:0,obligacjeZmienne:0,nieruchomosci:0,zloto:0,
+    cenaAkcje:[100],cenaObligStale:[100],cenaObligZmienne:[100],cenaNier:[100],cenaZloto:[100],cenaGotowka:[100]};
+  historiaStatystyk = [snapshot()];
+  historiaDecyzji = [];
+  trumpEventData = null;
+  pozytywneNaTure = {};
+}
+
+function rozpocznijGre(){
+  let inp = document.getElementById('input-nazwa');let err = document.getElementById('name-error');
+  let name = (inp?inp.value:'').trim();
+  if(!name){err.innerText='⚠️ Musisz wpisać nazwę!';err.style.display='block';inp.classList.add('error');inp.focus();return;}
+  if(name.length<3){err.innerText='⚠️ Min. 3 znaki.';err.style.display='block';inp.classList.add('error');inp.focus();return;}
+  err.style.display='none';inp.classList.remove('error');
+  if(!stan.tryb)stan.tryb='normal';
+  resetStan();stan.nazwa=name;
+  document.querySelectorAll('.quiz-opt').forEach(b=>{b.disabled=false;b.className='quiz-opt';});
+  ['ql-result','qb-result','qk-result'].forEach(id=>{let e=document.getElementById(id);if(e)e.style.display='none';});
+  let al=document.getElementById('achiev-list');if(al)al.innerHTML='';
+  let wb=document.getElementById('wyjasnienie-box');if(wb)wb.innerHTML='';
+  let rt=document.getElementById('report-text');if(rt)rt.value='';
+  let rh=document.getElementById('report-hint');if(rh)rh.innerHTML='Min. 30 znaków.';
+  let sb=document.getElementById('btn-save-report');if(sb){sb.disabled=false;sb.innerText='💾 Zapisz raport';}
+  document.getElementById('panstwo-tytul').innerText=`Państwo: ${stan.nazwa}`;
+  document.getElementById('tryb-tytul').innerText=stan.tryb==='hard'?'🔥 TRUDNY':'🎯 Normalny';
+  document.getElementById('tryb-tytul').style.color=stan.tryb==='hard'?'#f97316':'#94a3b8';
+  zmienEkran('screen-game');
+  aktualizujInterfejs();
+}
+
+function zmienEkran(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function resetujGre(){
+  let tryb=(stan&&stan.tryb)||'normal';
+  stan={tryb:tryb};pf={};historiaStatystyk=[];historiaDecyzji=[];
+  zmienEkran('screen-start');
+  let inp=document.getElementById('input-nazwa');if(inp){inp.value='';inp.classList.remove('error');}
+  let err=document.getElementById('name-error');if(err)err.style.display='none';
+  ustawTryb(tryb);
+  let rt=document.getElementById('report-text');if(rt)rt.value='';
+  let sb=document.getElementById('btn-save-report');if(sb){sb.disabled=false;sb.innerText='💾 Zapisz raport';}
+  document.querySelectorAll('.quiz-opt').forEach(b=>{b.disabled=false;b.className='quiz-opt';});
+  ['ql-result','qb-result','qk-result'].forEach(id=>{let e=document.getElementById(id);if(e)e.style.display='none';});
+  let al=document.getElementById('achiev-list');if(al)al.innerHTML='';
+  let wb=document.getElementById('wyjasnienie-box');if(wb)wb.innerHTML='';
+}
+
+// ================================================================
+// STATUS
+// ================================================================
+function getStatusClass(val,type){
+  if(type==='inflacja'){if(val>=stan.inflacjaTargetMin&&val<=stan.inflacjaTargetMax)return 'status-green';if((val>=stan.inflacjaTargetMin-1&&val<stan.inflacjaTargetMin)||(val>stan.inflacjaTargetMax&&val<=stan.inflacjaTargetMax+2))return 'status-yellow';return 'status-red';}
+  if(type==='pkb'){if(val>=2)return 'status-green';if(val>=0)return 'status-yellow';return 'status-red';}
+  if(type==='bezrobocie'){if(val<=6)return 'status-green';if(val<=10)return 'status-yellow';return 'status-red';}
+  if(type==='populalnosc'||type==='zadowolenie'){if(val>=50)return 'status-green';if(val>=30)return 'status-yellow';return 'status-red';}
+  if(type==='dlug'){if(val<=55)return 'status-green';if(val<=75)return 'status-yellow';return 'status-red';}
+  if(type==='bilans'){if(val>=0)return 'status-green';if(val>=-3)return 'status-yellow';return 'status-red';}
+  if(type==='prod'){if(val>=100)return 'status-green';if(val>=90)return 'status-yellow';return 'status-red';}
+  if(type==='kondycjaPsychiczna'){if(val>=70)return 'status-green';if(val>=40)return 'status-yellow';return 'status-red';}
+  return 'status-green';
+}
+function setColor(id,text,val,type){let e=document.getElementById(id);if(!e)return;e.innerText=text;e.className=getStatusClass(val,type);}
+
+// ================================================================
+// DORADCY (mniej oczywiste)
+// ================================================================
+function generujDoradcow(){
+  let inf=stan.inflacja,tMax=stan.inflacjaTargetMax,tMin=stan.inflacjaTargetMin;
+  let hawk,dove;
+  if(inf>tMax+2){hawk='Rynki wyceniają utratę kontroli nad cenami. Trzeba działać zdecydowanie.';dove='Gwałtowna reakcja może zdławić inwestycje, które jeszcze żyją.';}
+  else if(inf>tMax){hawk='Odchylenie od celu rośnie. Warto zasygnalizować determinację.';dove='Jesteśmy blisko celu – zbyt mocny ruch może zaszkodzić.';}
+  else if(inf<tMin-0.5){hawk='Presja dezinflacyjna może przerodzić się w spiralę oczekiwań.';dove='Spadek cen to szansa dla konsumentów, nie panikujmy.';}
+  else if(inf<tMin){hawk='Delikatne niedobicie celu. Rozważmy łagodne wsparcie.';dove='Rynek potrzebuje czasu – nie reagujmy na każdy odczyt.';}
+  else{hawk='Równowaga może być krucha. Uważajmy na płace.';dove='Warto wykorzystać okno stabilności na inwestycje.';}
+  if(stan.pkb>3.5){hawk+=' Przegrzanie gospodarki staje się realne.';dove+=' Wzrost jest solidny, ale sprawdźmy, czy nie bańka.';}
+  if(stan.pkb<0){hawk+=' Ujemny wzrost zwykle wymaga poluzowania.';dove+=' Recesja to nie czas na eksperymenty.';}
+  if(stan.bezrobocie>10){hawk+=' Wysokie bezrobocie to sygnał słabego popytu.';dove+=' Rynek pracy woła o wsparcie.';}
+  if(stan.militaria<1.5){hawk+=' Niskie wydatki militarne mogą prowokować sąsiadów.';dove+=' Pokój jest tańszy niż zbrojenia.';}
+  if(stan.kondycjaPsychiczna<30){hawk+=' (Twoje zmęczenie widać w decyzjach.)';dove+=' (Może czas na urlop?)';}
+  return {hawk,dove};
+}
+function renderujDoradcow(){
+  let {hawk,dove}=generujDoradcow();
+  let el=document.getElementById('advisor-panel');if(!el)return;
+  el.innerHTML=`<div class="advisor-card advisor-hawk"><div class="adv-name">🦅 Jastrząb <span class="adv-bias">antyinflacyjny</span></div><div>${hawk}</div></div>
+    <div class="advisor-card advisor-dove"><div class="adv-name">🕊️ Gołąb <span class="adv-bias">prorozwojowy</span></div><div>${dove}</div></div>`;
+}
+
+// ================================================================
+// INTERFEJS
+// ================================================================
+function aktualizujInterfejs(){
+  document.getElementById('tura-tytul').innerText=`Kwartał ${stan.tura} / ${stan.maxTur}`;
+  document.getElementById('punkty-tytul').innerText=`⭐ Punkty: ${stan.punkty}`;
+  document.getElementById('s-pop').innerText=stan.populacja.toFixed(1)+' mln';
+  setColor('s-zadowolenie',stan.zadowolenie+'%',stan.zadowolenie,'zadowolenie');
+  setColor('s-pkb',(stan.pkb+stan.inflacja).toFixed(1)+'%',stan.pkb+stan.inflacja,'pkb');
+  setColor('s-pkb-real',(stan.pkb-((stan.populacja/38)-1)*100).toFixed(1)+'%',stan.pkb,'pkb');
+  setColor('s-inflacja',stan.inflacja.toFixed(1)+'%',stan.inflacja,'inflacja');
+  setColor('s-bezrobocie',stan.bezrobocie.toFixed(1)+'%',stan.bezrobocie,'bezrobocie');
+  document.getElementById('s-stopy').innerText=stan.stopy.toFixed(1)+'%';
+  setColor('s-dlug',stan.dlug.toFixed(1)+'%',stan.dlug,'dlug');
+  setColor('s-bilans',stan.bilans.toFixed(1)+'%',stan.bilans,'bilans');
+  document.getElementById('s-gini').innerText=stan.gini.toFixed(2);
+  document.getElementById('s-podzial').innerText=stan.podzial.toFixed(1);
+  document.getElementById('s-inwestycje').innerText=stan.inwestycje.toFixed(1)+'%';
+  setColor('s-prod',Math.round(stan.prod)+' pkt',stan.prod,'prod');
+  setColor('s-populalnosc',stan.populalnosc+'%',stan.populalnosc,'populalnosc');
+  let milEl=document.getElementById('s-militaria');milEl.innerText=stan.militaria.toFixed(1)+'%';
+  milEl.className=stan.militaria<1?'status-red':stan.militaria<2?'status-yellow':'status-green';
+  setColor('s-kondycja',Math.round(stan.kondycjaPsychiczna)+'/100',stan.kondycjaPsychiczna,'kondycjaPsychiczna');
+
+  let nomG=((stan.gielda/1000)-1)*100,realG=nomG-stan.inflacjaCumul;
+  document.getElementById('s-gielda').innerText=stan.gielda.toFixed(0);
+  let eN=document.getElementById('s-gielda-nom');eN.innerText=(nomG>=0?'+':'')+nomG.toFixed(1)+'%';eN.className=nomG>=0?'status-green':'status-red';
+  let eR=document.getElementById('s-gielda-real');eR.innerText=(realG>=0?'+':'')+realG.toFixed(1)+'%';eR.className=realG>=0?'status-green':'status-red';
+
+  document.getElementById('btn-portfel').innerText=`💼 $${fmtD(wartoscPortfela())}`;
+
+  let kw=document.getElementById('kondycja-warning');
+  if(stan.kondycjaPsychiczna<=20){kw.style.display='block';kw.style.background='#3f1d1d';kw.style.borderColor='var(--bad)';kw.style.color='#fecaca';kw.innerHTML=`😵 <strong>Kondycja: ${Math.round(stan.kondycjaPsychiczna)}/100</strong> – 20% szansy na błąd!`;}
+  else if(stan.kondycjaPsychiczna<=40){kw.style.display='block';kw.style.background='#3f2d0d';kw.style.borderColor='var(--warn)';kw.style.color='#fde68a';kw.innerHTML=`⚠️ Kondycja: ${Math.round(stan.kondycjaPsychiczna)}/100.`;}
+  else kw.style.display='none';
+
+  renderujDoradcow();
+  renderCurrentStep();
+}
+
+function hideAllSections(){
+  ['przyciski-standardowe','przyciski-kryzys-granica','przyciski-kryzys-gielda','przyciski-kryzys-naftowy',
+   'przyciski-alt-krypto','przyciski-alt-startup','przyciski-alt-deweloper','przyciski-trump',
+   'przyciski-quiz-latwy','przyciski-quiz-bayes','przyciski-quiz-kelly',
+   'wystapienie-publiczne','konferencja-finansowa','military-crisis','stock-pick'].forEach(id=>{
+    let e=document.getElementById(id);if(e)e.style.display='none';
+  });
+}
+
+function renderCurrentStep(){
+  hideAllSections();
+
+  // 1. Military crisis (priorytet)
+  if(stan.pendingMilitaryCrisis || (stan.militaria<1 && !stan.militaryDone[stan.tura])){
+    renderMilitaryCrisis();return;
+  }
+
+  // 2. Wystąpienie publiczne
+  if(APPEARANCE_QUARTERS.includes(stan.tura) && !stan.appearanceDone[stan.tura]){
+    renderAppearance();return;
+  }
+
+  // 3. Konferencja finansowa
+  if(FINANCE_CONFERENCE_QUARTERS.includes(stan.tura) && !stan.confDone[stan.tura]){
+    renderConference();return;
+  }
+
+  // 4. Kwartał z akcjami: najpierw stopa, potem akcje
+  if(STOCK_PICK_QUARTERS.includes(stan.tura)){
+    if(!stan.rateDone[stan.tura]){document.getElementById('przyciski-standardowe').style.display='block';return;}
+    if(!stan.stockDone[stan.tura]){renderStockPick();return;}
+    return;
+  }
+
+  // 5. Główny event kwartału
+  showMainEvent();
+}
+
+function showMainEvent(){
+  switch(stan.tura){
+    case 2: document.getElementById('przyciski-kryzys-granica').style.display='block';break;
+    case 3: renderAltInvest('krypto');document.getElementById('przyciski-alt-krypto').style.display='block';break;
+    case 5: document.getElementById('przyciski-kryzys-gielda').style.display='block';break;
+    case 6: renderAltInvest('startup');document.getElementById('przyciski-alt-startup').style.display='block';break;
+    case 8: document.getElementById('przyciski-kryzys-naftowy').style.display='block';break;
+    case 9: renderAltInvest('deweloper');document.getElementById('przyciski-alt-deweloper').style.display='block';break;
+    case 10: case 14: renderTrumpEvent();document.getElementById('przyciski-trump').style.display='block';break;
+    case 11: document.getElementById('przyciski-quiz-latwy').style.display='block';break;
+    case 12: document.getElementById('przyciski-quiz-bayes').style.display='block';break;
+    case 13: document.getElementById('przyciski-quiz-kelly').style.display='block';break;
+    case 20: document.getElementById('przyciski-standardowe').style.display='block';break;
+    default: document.getElementById('przyciski-standardowe').style.display='block';
+  }
+}
+
+// ================================================================
+// MILITARY CRISIS
+// ================================================================
+function renderMilitaryCrisis(){
+  let container=document.getElementById('military-crisis');
+  let warChanceNo = stan.militaria<0.5?19:12;
+  container.innerHTML=`<div class="event-box military">
+    <h3>⚔️ Krytyczny poziom militariów: ${stan.militaria.toFixed(2)}% PKB</h3>
+    <p>Wojsko nie ma środków na utrzymanie sprzętu. Rząd domaga się dodruku.</p>
+    <p style="font-size:.85rem;margin-top:10px"><strong>Jeśli drukujesz:</strong> Militaria +2,0 p.p., ale <strong>8% szans na wojnę</strong> (sąsiedzi mogą uznać to za akt agresji).</p>
+    <p style="font-size:.85rem"><strong>Jeśli nie drukujesz:</strong> Militaria pozostają na tym samym poziomie – <strong>${warChanceNo}% szans na wojnę</strong>.</p>
+    <p style="font-size:.8rem;opacity:.8;margin-top:8px"><em>Wojna oznacza koniec gry – kraj zostanie zaatakowany.</em></p>
+  </div>
+  <button class="btn btn-danger" onclick="odpowiedzMilitary(true)">🖨️ Drukuj na militaria (+2 p.p., 8% wojny)</button>
+  <button class="btn btn-secondary" onclick="odpowiedzMilitary(false)">🛡️ Nie drukuj (${warChanceNo}% wojny)</button>`;
+  container.style.display='block';
+}
+
+function odpowiedzMilitary(print){
+  let warChance;
+  if(print){
+    stan.militaria+=2.0;
+    warChance=0.08;
+  } else {
+    warChance=stan.militaria<0.5?0.19:0.12;
+  }
+  stan.militaryDone[stan.tura]=true;
+  stan.pendingMilitaryCrisis=false;
+
+  if(Math.random()<warChance){
+    historiaDecyzji.push({tura:stan.tura,decyzja:(print?'🖨️':'🛡️')+' Military crisis → WOJNA',stanPrzed:historiaStatystyk[historiaStatystyk.length-1]});
+    endEarly(`⚔️ <strong>WOJNA!</strong> Kraj został zaatakowany. Militaria na poziomie ${stan.militaria.toFixed(2)}% PKB nie odstraszyły agresora.`);
+    return;
+  }
+
+  zapiszDecyzje((print?'🖨️':'🛡️')+' Military crisis (bez wojny)');
+  let msg=print?`🖨️ <strong>Dodruk na militaria!</strong> Militaria: ${stan.militaria.toFixed(2)}% PKB. Wojny uniknięto.`:`🛡️ <strong>Brak dodruku.</strong> Militaria: ${stan.militaria.toFixed(2)}%. Wojny uniknięto, ale ryzyko rośnie.`;
+  wyswietlKomunikator(msg);
+  renderCurrentStep();
+}
+
+function wyswietlKomunikator(t){let e=document.getElementById('komunikat');if(e)e.innerHTML=t;}
+
+// ================================================================
+// WYSTĄPIENIE PUBLICZNE
+// ================================================================
+function renderAppearance(){
+  if(!stan.currentAppearance || stan.currentAppearance.tura!==stan.tura){
+    let q=POLICY_QUESTIONS[Math.floor(Math.random()*POLICY_QUESTIONS.length)];
+    stan.currentAppearance={tura:stan.tura,q:q.q,options:q.options,correct:q.correct,adviceUsed:false};
+  }
+  let a=stan.currentAppearance;
+  let container=document.getElementById('wystapienie-publiczne');
+  let html=`<div class="event-box public">
+    <h3>🎤 Wystąpienie publiczne – Q${stan.tura}</h3>
+    <p style="font-size:.93rem;font-style:italic;">Dziennikarze pytają o Twoją politykę monetarną:</p>
+    <p style="font-weight:600;margin-top:12px;font-size:.95rem;">${a.q}</p>`;
+  a.options.forEach((opt,i)=>{html+=`<button class="quiz-opt" onclick="odpowiedzWystapienie(${i})">${String.fromCharCode(65+i)}) ${opt}</button>`;});
+  html+=`</div>`;
+  container.innerHTML=html;
+  container.style.display='block';
+}
+
+function odpowiedzWystapienie(idx){
+  let a=stan.currentAppearance;if(!a)return;
+  let correct=idx===a.correct;
+  let msg='';
+  if(correct){
+    stan.populalnosc+=5;stan.zadowolenie+=2;stan.punkty+=20;
+    pf.akcje*=1.03;pf.obligacjeStale*=1.03;pf.obligacjeZmienne*=1.03;
+    msg=`✅ <strong>Poprawna odpowiedź!</strong> +5% poparcia, +3% na papierach, +20 pkt.`;
+    if(Math.random()<0.25){stan.salary+=1000;msg+=`<br>💰 <strong>Podwyżka pensji!</strong> +$1000/kw. (łącznie $${fmtD(stan.salary)}).`;showToast('💰 Podwyżka pensji! +$1000','gold');}
+  } else {
+    stan.populalnosc-=5;stan.zadowolenie-=2;stan.punkty-=10;
+    pf.akcje*=0.97;pf.obligacjeStale*=0.97;pf.obligacjeZmienne*=0.97;
+    msg=`❌ <strong>Błędna odpowiedź!</strong> -5% poparcia, -3% na papierach, -10 pkt.`;
+    if(Math.random()<0.20){stan.salary=Math.max(20000,stan.salary-1000);msg+=`<br>📉 <strong>Obniżka pensji!</strong> -$1000/kw. (łącznie $${fmtD(stan.salary)}).`;showToast('📉 Obniżka pensji! -$1000','danger');}
+  }
+  stan.populalnosc=Math.max(0,Math.min(100,stan.populalnosc));
+  stan.zadowolenie=Math.max(0,Math.min(100,stan.zadowolenie));
+  stan.appearanceDone[stan.tura]=true;
+  stan.currentAppearance=null;
+  zapiszDecyzje((correct?'✅':'❌')+' Wystąpienie publiczne');
+  wyswietlKomunikator(msg);
+  aktualizujInterfejs();
+}
+
+// ================================================================
+// KONFERENCJA FINANSOWA
+// ================================================================
+function renderConference(){
+  if(!stan.currentConf || stan.currentConf.tura!==stan.tura){
+    let q=FINANCE_CONFERENCE_QUESTIONS[Math.floor(Math.random()*FINANCE_CONFERENCE_QUESTIONS.length)];
+    stan.currentConf={tura:stan.tura,q:q.q,options:q.options,correct:q.correct,explanation:q.explanation,advisorUsed:false};
+  }
+  let c=stan.currentConf;
+  let container=document.getElementById('konferencja-finansowa');
+  let html=`<div class="event-box conf">
+    <h3>🎯 Konferencja finansowa – Q${stan.tura}</h3>
+    <p style="font-size:.93rem;font-style:italic;">Na konferencji pytają Cię o wskaźniki finansowe. Twoja odpowiedź wpłynie na zaufanie do portfela:</p>
+    <p style="font-weight:600;margin-top:12px;font-size:.95rem;">${c.q}</p>`;
+  c.options.forEach((opt,i)=>{html+=`<button class="quiz-opt" onclick="odpowiedzKonferencja(${i})">${String.fromCharCode(65+i)}) ${opt}</button>`;});
+  html+=`<button class="btn btn-advisor" onclick="doradcaKonferencja()" style="margin-top:12px" ${c.advisorUsed?'disabled':''}>💡 Skorzystaj z doradcy ($10,000) ${c.advisorUsed?'✅':''}</button>`;
+  if(c.advisorUsed){html+=`<div class="advisor-box"><strong>Doradca:</strong> ${c.explanation}</div>`;}
+  html+=`</div>`;
+  container.innerHTML=html;
+  container.style.display='block';
+}
+
+function doradcaKonferencja(){
+  let c=stan.currentConf;if(!c||c.advisorUsed)return;
+  if(pf.gotowka<10000){showToast('⚠️ Brak $10,000 gotówki!','danger');return;}
+  pf.gotowka-=10000;c.advisorUsed=true;
+  showToast('💡 Doradca wyjaśnia: '+c.explanation.substring(0,80)+'...','info');
+  renderConference();
+}
+
+function odpowiedzKonferencja(idx){
+  let c=stan.currentConf;if(!c)return;
+  let correct=idx===c.correct;
+  let msg='';
+  if(correct){
+    pf.akcje*=1.02;pf.obligacjeStale*=1.02;pf.obligacjeZmienne*=1.02;
+    stan.punkty+=15;
+    msg=`✅ <strong>Poprawnie!</strong> +2% na akcjach i obligacjach, +15 pkt.<br><em>${c.explanation}</em>`;
+  } else {
+    pf.akcje*=0.98;pf.obligacjeStale*=0.98;pf.obligacjeZmienne*=0.98;
+    stan.punkty-=15;
+    msg=`❌ <strong>Błąd!</strong> -2% na akcjach i obligacjach, -15 pkt.<br><em>${c.explanation}</em>`;
+  }
+  stan.confDone[stan.tura]=true;
+  stan.currentConf=null;
+  zapiszDecyzje((correct?'✅':'❌')+' Konferencja finansowa');
+  wyswietlKomunikator(msg);
+  aktualizujInterfejs();
+}
+
+// ================================================================
+// STOCK PICK
+// ================================================================
+function renderStockPick(){
+  if(!stan.currentStock || stan.currentStock.tura!==stan.tura){
+    let q=STOCK_QUESTIONS[STOCK_PICK_QUARTERS.indexOf(stan.tura)];
+    if(!q)q=STOCK_QUESTIONS[0];
+    stan.currentStock={tura:stan.tura,q:q,advisorUsed:false};
+  }
+  let s=stan.currentStock;let q=s.q;
+  let kwota=Math.round(wartoscPortfela()*0.2);
+  if(kwota>pf.gotowka)kwota=Math.floor(pf.gotowka);
+  let container=document.getElementById('stock-pick');
+  let html=`<div class="event-box stock">
+    <h3>📊 ${q.title} – wybierz lepszą spółkę</h3>
+    <div class="stock-comparison">
+      <div class="stock-card">
+        <h4>🅰️ ${q.companyA.name}</h4>
+        <div class="stock-metric"><span class="lbl">Sektor</span><span class="val">${q.companyA.sector}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Zysk (P/E)</span><span class="val">${q.companyA.pe}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Przychody (P/S)</span><span class="val">${q.companyA.ps}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Wartość ks. (P/BV)</span><span class="val">${q.companyA.pbv}</span></div>
+        <div class="stock-metric"><span class="lbl">Rentowność (ROE)</span><span class="val">${q.companyA.roe}%</span></div>
+        <div class="stock-metric"><span class="lbl">Wzrost przychodów</span><span class="val">${q.companyA.growth}%</span></div>
+      </div>
+      <div class="stock-card">
+        <h4>🅱️ ${q.companyB.name}</h4>
+        <div class="stock-metric"><span class="lbl">Sektor</span><span class="val">${q.companyB.sector}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Zysk (P/E)</span><span class="val">${q.companyB.pe}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Przychody (P/S)</span><span class="val">${q.companyB.ps}</span></div>
+        <div class="stock-metric"><span class="lbl">Cena/Wartość ks. (P/BV)</span><span class="val">${q.companyB.pbv}</span></div>
+        <div class="stock-metric"><span class="lbl">Rentowność (ROE)</span><span class="val">${q.companyB.roe}%</span></div>
+        <div class="stock-metric"><span class="lbl">Wzrost przychodów</span><span class="val">${q.companyB.growth}%</span></div>
+      </div>
+    </div>
+    <p style="font-size:.85rem;margin-top:8px">Inwestycja: <strong>$${fmtD(kwota)}</strong> (20% portfela). Dobry wybór: +15%. Zły: -10%.</p>
+  </div>
+  <button class="btn btn-success" onclick="odpowiedzStockPick('A')">🅰️ Kup ${q.companyA.name}</button>
+  <button class="btn btn-success" onclick="odpowiedzStockPick('B')">🅱️ Kup ${q.companyB.name}</button>
+  <button class="btn btn-advisor" onclick="doradcaStock()" ${s.advisorUsed?'disabled':''}>💡 Doradca ($10,000) ${s.advisorUsed?'✅':''}</button>`;
+  if(s.advisorUsed){html+=`<div class="advisor-box"><strong>Doradca:</strong> ${q.explanation}</div>`;}
+  container.innerHTML=html;
+  container.style.display='block';
+}
+
+function doradcaStock(){
+  let s=stan.currentStock;if(!s||s.advisorUsed)return;
+  if(pf.gotowka<10000){showToast('⚠️ Brak $10,000 gotówki!','danger');return;}
+  pf.gotowka-=10000;s.advisorUsed=true;
+  showToast('💡 Doradca wyjaśnia wskaźniki...','info');
+  renderStockPick();
+}
+
+function odpowiedzStockPick(choice){
+  let s=stan.currentStock;if(!s)return;
+  let q=s.q;
+  let kwota=Math.round(wartoscPortfela()*0.2);
+  if(kwota>pf.gotowka)kwota=Math.floor(pf.gotowka);
+  let correct=choice===q.correct;
+  let msg='';
+  if(correct){
+    let gain=Math.round(kwota*0.15);
+    pf.gotowka+=gain;
+    stan.punkty+=30;
+    msg=`✅ <strong>Dobra decyzja!</strong> ${q.companyA.name} i ${q.companyB.name}: ${q.correct==='A'?'A':'B'} jest lepszą spółką. +$${fmtD(gain)} (15%), +30 pkt.<br><em>${q.explanation}</em>`;
+    showToast(`✅ Dobry wybór! +$${fmtD(gain)}`,'gold');
+  } else {
+    let loss=Math.round(kwota*0.10);
+    pf.gotowka=Math.max(0,pf.gotowka-loss);
+    stan.punkty-=15;
+    msg=`❌ <strong>Zły wybór!</strong> -$${fmtD(loss)} (10%), -15 pkt.<br><em>${q.explanation}</em>`;
+    showToast(`❌ Zły wybór! -$${fmtD(loss)}`,'danger');
+  }
+  stan.stockDone[stan.tura]=true;
+  stan.currentStock=null;
+  zapiszDecyzje((correct?'✅':'❌')+' Wybór akcji');
+  zaksiegujKoniecTury(msg);
+}
+
+// ================================================================
+// ALT INVEST
+// ================================================================
+function renderAltInvest(key){
+  let ai=ALT_INVEST[key];
+  let kwota=Math.round(wartoscPortfela()*0.2);
+  if(kwota>pf.gotowka)kwota=Math.floor(pf.gotowka);
+  let evText=`0,${Math.round(ai.probWin*100)} × ${(ai.zyskWin*100).toFixed(0)}% + 0,${Math.round((1-ai.probWin)*100)} × ${(ai.zyskLose*100).toFixed(0)}% = <strong>${ai.ev>0?'+':''}${ai.ev}%</strong>`;
+  let container=document.getElementById('przyciski-alt-'+key);if(!container)return;
+  container.innerHTML=`<div class="event-box alt"><h3>${ai.title}</h3><p>${ai.desc}</p><div style="background:#0f172a;border-radius:6px;padding:10px;margin-top:10px;font-size:.83rem;line-height:1.6"><div><strong>Kwota:</strong> $${fmtD(kwota)} (20% portfela)</div><div><strong>EV:</strong> ${evText}</div></div></div>
+    <button class="btn btn-success" onclick="wykonajAltInvest('${key}','inwestuj')">💸 Zainwestuj $${fmtD(kwota)}</button>
+    <button class="btn btn-secondary" onclick="wykonajAltInvest('${key}','spasuj')">🛡️ Spasuj</button>`;
+}
+
+function wykonajAltInvest(key,decyzja){
+  let ai=ALT_INVEST[key];
+  let kwota=Math.round(wartoscPortfela()*0.2);
+  if(kwota>pf.gotowka)kwota=Math.floor(pf.gotowka);
+  let msg='';
+  let poprawna=decyzja===ai.correct;
+  if(decyzja==='inwestuj'){
+    if(kwota<100){msg=`${ai.title}: ⚠️ Brak środków.`;}
+    else{
+      pf.gotowka-=kwota;
+      let win=Math.random()<ai.probWin;
+      let zysk=win?ai.zyskWin:ai.zyskLose;
+      let zwrot=kwota*(1+zysk);
+      pf.gotowka+=Math.max(0,zwrot);
+      if(win){msg=`${ai.title}: 🎉 WYGRANA! Zwrot $${fmtD(zwrot)}.`;showToast(`🎉 +$${fmtD(zwrot-kwota)}`,'gold');}
+      else{msg=`${ai.title}: 😢 STRATA. Zwrot $${fmtD(Math.max(0,zwrot))}.`;showToast(`😢 -$${fmtD(kwota-Math.max(0,zwrot))}`,'info');}
+    }
+  } else msg=`${ai.title}: 🛡️ Spasowałeś.`;
+  if(poprawna){stan.punkty+=40;msg+=` ✅ +40 pkt`;}
+  else{stan.punkty-=20;msg+=` ❌ -20 pkt`;}
+  zapiszDecyzje(decyzja==='inwestuj'?`💸 ${key}`:`🛡️ ${key}`);
+  zaksiegujKoniecTury(msg);
+}
+
+// ================================================================
+// TRUMP
+// ================================================================
+function renderTrumpEvent(){
+  if(!trumpEventData || trumpEventData._tura!==stan.tura){
+    let pick=TRUMP_EVENTS[Math.floor(Math.random()*TRUMP_EVENTS.length)];
+    trumpEventData=Object.assign({},pick,{_tura:stan.tura});
+  }
+  let te=trumpEventData;
+  let effectsHtml=[];
+  if(te.effects.akcje)effectsHtml.push(`akcje ×${te.effects.akcje.toFixed(2)}`);
+  if(te.effects.obligacjeStale)effectsHtml.push(`obligacje stałe ×${te.effects.obligacjeStale.toFixed(2)}`);
+  if(te.effects.obligacjeZmienne)effectsHtml.push(`obligacje zmienne ×${te.effects.obligacjeZmienne.toFixed(2)}`);
+  if(te.effects.nieruchomosci)effectsHtml.push(`nieruchomości ×${te.effects.nieruchomosci.toFixed(2)}`);
+  if(te.effects.zloto)effectsHtml.push(`złoto ×${te.effects.zloto.toFixed(2)}`);
+  if(te.effects.gielda)effectsHtml.push(`giełda ×${te.effects.gielda.toFixed(2)}`);
+  let container=document.getElementById('przyciski-trump');if(!container)return;
+  container.innerHTML=`<div class="event-box trump"><h3>${te.emoji} ${te.title}</h3><p style="font-style:italic;color:#fef3c7">„${te.desc}"</p><p style="font-size:.83rem;opacity:.85">Wpływ: ${effectsHtml.join(', ')}</p></div>
+    <button class="btn btn-trump" onclick="wykonajTrumpEvent('reaguj')">📣 Odpowiedz publicznie (ryzyko, ale +pkt)</button>
+    <button class="btn btn-secondary" onclick="wykonajTrumpEvent('ignoruj')">🤐 Zignoruj (bezpiecznie)</button>`;
+}
+
+function wykonajTrumpEvent(reakcja){
+  if(!trumpEventData)return;
+  let te=trumpEventData;
+  let msg=`🐦 <strong>${te.title}:</strong> „${te.desc}"`;
+  // Aplikuj efekty
+  Object.keys(te.effects).forEach(k=>{
+    if(k==='akcje')pf.akcje*=te.effects[k];
+    else if(k==='obligacjeStale')pf.obligacjeStale*=te.effects[k];
+    else if(k==='obligacjeZmienne')pf.obligacjeZmienne*=te.effects[k];
+    else if(k==='nieruchomosci')pf.nieruchomosci*=te.effects[k];
+    else if(k==='zloto')pf.zloto*=te.effects[k];
+    else if(k==='gielda')stan.gielda*=te.effects[k];
+  });
+  if(te.populalnosc)stan.populalnosc+=te.populalnosc;
+  let lbl='';
+  if(reakcja==='reaguj'){
+    let esk=Math.random()<0.3;
+    if(esk){stan.gielda*=0.95;pf.akcje*=0.95;stan.populalnosc-=5;stan.punkty-=10;msg+=`<br>📣 Eskalacja! -10 pkt.`;lbl='Reakcja (eskalacja)';}
+    else{stan.populalnosc+=5;stan.zadowolenie+=2;stan.punkty+=20;msg+=`<br>📣 Sukces! +20 pkt, +5 poparcia.`;lbl='Reakcja (sukces)';}
+  } else {stan.punkty+=5;msg+=`<br>🤐 Milczenie (+5 pkt).`;lbl='Ignorowanie';}
+  zapiszDecyzje(`🐦 ${lbl}`);
+  zaksiegujKoniecTury(msg);
+}
+
+// ================================================================
+// QUIZY
+// ================================================================
+function odpowiedzQuiz(typ,answer,btnId){
+  let wrapper=btnId.startsWith('ql')?'przyciski-quiz-latwy':btnId.startsWith('qb')?'przyciski-quiz-bayes':'przyciski-quiz-kelly';
+  document.querySelectorAll('#'+wrapper+' .quiz-opt').forEach(b=>b.disabled=true);
+  let el=document.getElementById(btnId);
+  let resultId=typ==='latwy'?'ql-result':typ==='bayes'?'qb-result':'qk-result';
+  let wynikEl=document.getElementById(resultId);
+  let correctIdx=QUIZ_ANSWERS[typ];
+  let ok=answer===correctIdx;
+  let rw=QUIZ_REWARDS[typ];
+  el.classList.add(ok?'correct':'wrong');
+  if(!ok){
+    document.querySelectorAll('#'+wrapper+' .quiz-opt').forEach(b=>{if(b.getAttribute('data-correct')==='1')b.classList.add('correct');});
+  }
+  let wyjasnienie={
+    latwy:'Wzór 3/12=25% jest poprawny statystycznie, ale w praktyce prawdopodobieństwo recesji zależy od bieżących i prognozowanych wskaźników PKB, stóp, krzywej rentowności. Empiryczne 25% to tylko punkt wyjścia.',
+    bayes:'P(ch|+)=(0,99×0,01)/(0,99×0,01+0,05×0,99)≈17%.',
+    kelly:'f*=p−q=0,6−0,4=0,20=20%.'
+  }[typ];
+  if(ok){
+    stan.punkty+=rw.win;stan.zadowolenie+=3;stan.pendingQuizModifier=1+rw.cash;
+    wynikEl.innerHTML=`✅ <strong>Poprawnie!</strong><br>${wyjasnienie}<br><em>+${rw.win} pkt &amp; +${(rw.cash*100).toFixed(1)}% na koncie.</em>`;
+    wynikEl.style.color='#86efac';
+  } else {
+    stan.punkty+=rw.lose;stan.zadowolenie-=5;stan.pendingQuizModifier=1-rw.cash;
+    wynikEl.innerHTML=`❌ <strong>Błąd!</strong><br>${wyjasnienie}<br><em>${rw.lose} pkt &amp; -${(rw.cash*100).toFixed(1)}% na koncie.</em>`;
+    wynikEl.style.color='#fca5a5';
+  }
+  wynikEl.style.display='block';
+  wynikEl.innerHTML+=`<br><button class="btn btn-secondary" style="margin-top:8px;width:auto;padding:7px 18px" onclick="kontynuujPoQuizie(${ok},'${typ}')">Kontynuuj →</button>`;
+}
+
+function kontynuujPoQuizie(ok,typ){
+  let nazwa={latwy:'Quiz: Recesja',bayes:'Quiz: Bayes',kelly:'Quiz: Kelly'}[typ];
+  zapiszDecyzje(`${ok?'✅':'❌'} ${nazwa}`);
+  let rw=QUIZ_REWARDS[typ];
+  let prefiks=ok?`✅ +${rw.win} pkt, +${(rw.cash*100).toFixed(1)}%`:`❌ ${rw.lose} pkt, -${(rw.cash*100).toFixed(1)}%`;
+  zaksiegujKoniecTury(prefiks);
+}
+
+// ================================================================
+// DECYZJE O STOPACH
+// ================================================================
+function zapiszDecyzje(label){
+  if(stan.lastAppearanceResult){
+    label=stan.lastAppearanceResult+' + '+label;
+    stan.lastAppearanceResult=null;
+  }
+  historiaDecyzji.push({tura:stan.tura,decyzja:label,stanPrzed:historiaStatystyk[historiaStatystyk.length-1]});
+}
+
+function ocenaStop(akcja){
+  const neutralRate=2.5;
+  const targetMid=(stan.inflacjaTargetMin+stan.inflacjaTargetMax)/2;
+  const inflationGap=stan.inflacja-targetMid;
+  const outputGap=stan.pkb-2.5;
+  const taylorRate=neutralRate+0.5*inflationGap+0.5*outputGap;
+  const gap=stan.stopy-taylorRate;
+  let score=0,reason='';
+  if(akcja===1){
+    if(gap<-1){score=25;reason='Inflacja wymaga zacieśnienia.';}
+    else if(gap<0){score=15;reason='Ostrożne zacieśnienie.';}
+    else if(gap<0.5){score=5;reason='Polityka bliska neutralnej.';}
+    else{score=-10;reason='Zacieśnienie przy restrykcyjnej polityce.';}
+  } else if(akcja===3){
+    if(gap>1){score=25;reason='Gospodarka wymaga luzowania.';}
+    else if(gap>0){score=15;reason='Ostrożne luzowanie.';}
+    else if(gap>-0.5){score=5;reason='Polityka bliska neutralnej.';}
+    else{score=-15;reason='Luzowanie przy ekspansywnej polityce.';}
+  } else {
+    if(Math.abs(gap)<0.5){score=20;reason='Polityka dobrze dopasowana.';}
+    else if(Math.abs(gap)<1.5){score=10;reason='Umiarkowanie niedopasowana.';}
+    else{score=-5;reason='Polityka wyraźnie niedopasowana.';}
+  }
+  return {score,reason};
+}
+
+function wykonajRuch(w){
+  stan.poprzednieStopy=stan.stopy;
+  let msg='',lbl='',typ='hold';
+  let ocena=ocenaStop(w);
+  stan.punkty+=ocena.score;
+  if(w===1){
+    stan.stopy+=1;stan.inflacja=Math.max(.5,stan.inflacja-1.5);stan.pkb-=.5;
+    stan.bezrobocie+=.3;stan.zadowolenie-=4;stan.populalnosc-=3;
+    stan.inwestycje-=1;stan.dlug+=.5;stan.podzial+=.3;
+    msg='📈 <strong>Zacieśnienie:</strong> Inflacja spada.';lbl='📈 Podwyżka +1%';typ='hawk';
+  } else if(w===2){
+    stan.inflacja+=.15;stan.pkb+=.05;stan.bezrobocie-=.05;
+    msg='⚖️ <strong>Utrzymanie.</strong>';lbl='⚖️ Utrzymanie';
+  } else {
+    stan.stopy=Math.max(0,stan.stopy-1);stan.inflacja+=1.8;stan.pkb+=.7;
+    stan.bezrobocie-=.4;stan.zadowolenie+=5;stan.populalnosc+=4;
+    stan.inwestycje+=1.5;stan.gini+=.01;stan.podzial-=.2;
+    msg='📉 <strong>Poluzowanie:</strong> Wzrost przyspiesza.';lbl='📉 Obniżka -1%';typ='dove';
+  }
+  let icon=ocena.score>0?'✅':(ocena.score===0?'➖':'❌');
+  msg+=`<br>${icon} <strong>Reguła Taylora:</strong> ${ocena.score>0?'+':''}${ocena.score} pkt – ${ocena.reason}`;
+
+  // Kwartał z akcjami: odłóż koniec tury
+  if(STOCK_PICK_QUARTERS.includes(stan.tura) && !stan.stockDone[stan.tura]){
+    stan.rateDone[stan.tura]=true;
+    stan.pendingRateMsg=msg;
+    stan.pendingRateLabel=lbl;
+    zapiszDecyzje(lbl);
+    renderStockPick();
+    return;
+  }
+
+  zapiszDecyzje(lbl);
+  zaksiegujKoniecTury(msg);
+}
+
+// ================================================================
+// KRYZYSY
+// ================================================================
+function wykonajKryzysGranica(w){
+  stan.poprzednieStopy=stan.stopy;
+  let msg='',lbl='',m=stan.crisisMultiplier;
+  if(w===1){
+    stan.militaria+=3.5*m;stan.inflacja+=4.5*m;stan.dlug+=4*m;stan.populalnosc+=12;stan.zadowolenie-=8;stan.pkb+=.5;stan.punkty+=20;
+    msg='🖨️ <strong>Wydrukowano!</strong> +20 pkt.';lbl='🖨️ Druk na militaria';
+  } else {
+    stan.populalnosc-=18;stan.zadowolenie-=15;stan.inflacja-=.5;stan.podzial+=1;stan.punkty+=10;
+    msg='🛡️ <strong>Odmowa.</strong> +10 pkt.';lbl='🛡️ Odmowa';
+  }
+  zapiszDecyzje(lbl);zaksiegujKoniecTury(msg);
+}
+
+function wykonajKryzysGielda(w){
+  stan.poprzednieStopy=stan.stopy;
+  let msg='',lbl='';
+  if(w===1){
+    stan.stopy=Math.max(0,stan.stopy-2);stan.pkb+=1.2;stan.inflacja+=1.5;
+    stan.zadowolenie+=10;stan.populalnosc+=8;stan.sukcesy++;stan.punkty+=50;
+    msg='🏦 <strong>Uratowano!</strong> +50 pkt.';lbl='🏦 Ratunek';
+  } else {
+    stan.pkb-=12.5;stan.bezrobocie+=20;stan.inflacja-=4;stan.zadowolenie-=30;stan.populalnosc-=35;stan.podzial+=3;stan.punkty-=30;
+    msg=`🚫 <strong>Depresja!</strong> Bezrobocie ${stan.bezrobocie.toFixed(0)}%.`;lbl='🚫 Depresja';
+  }
+  zapiszDecyzje(lbl);zaksiegujKoniecTury(msg);
+}
+
+function wykonajKryzysNaftowy(w){
+  stan.poprzednieStopy=stan.stopy;
+  let msg='',lbl='';
+  if(w===1){
+    let oldS=stan.stopy,oldI=stan.inflacja;
+    stan.stopy+=15;stan.inflacja=Math.max(0.5,stan.inflacja*0.2);
+    stan.pkb-=3.5;stan.inwestycje-=4;stan.zadowolenie-=15;stan.populalnosc-=20;stan.sukcesy++;stan.punkty+=100;
+    msg=`⚡ <strong>Szok Volckera!</strong> Stopy: ${oldS.toFixed(1)}→${stan.stopy.toFixed(1)}%, inflacja: ${oldI.toFixed(1)}→${stan.inflacja.toFixed(1)}%. +100 pkt.`;lbl='⚡ Volcker';
+  } else {
+    stan.inflacja+=10;stan.pkb-=1.5;stan.zadowolenie-=25;stan.populalnosc-=30;stan.punkty-=40;
+    msg=`🕊️ <strong>Stagflacja!</strong> Inflacja +10 p.p.`;lbl='🕊️ Miękka';
+  }
+  zapiszDecyzje(lbl);zaksiegujKoniecTury(msg);
+}
+
+// ================================================================
+// POZYTYWNE
+// ================================================================
+function sprawdzPozytywne(){
+  if(pozytywneNaTure[stan.tura])return null;
+  pozytywneNaTure[stan.tura]=true;
+  let wykluczone=[2,3,5,6,8,9,10,11,12,13,14];
+  if(wykluczone.includes(stan.tura))return null;
+  let p=0.35;
+  if(stan.inflacja>=stan.inflacjaTargetMin&&stan.inflacja<=stan.inflacjaTargetMax)p+=0.2;
+  if(stan.pkb>=2.5)p+=0.1;
+  if(stan.zadowolenie>=60)p+=0.05;
+  if(stan.inflacja>stan.inflacjaTargetMax+2)p-=0.2;
+  p=Math.max(0.1,Math.min(0.6,p));
+  if(Math.random()>p)return null;
+  let ev=POZYTYWNE[Math.floor(Math.random()*POZYTYWNE.length)];
+  ev.apply(stan);
+  showToast(`${ev.emoji} <strong>${ev.title}</strong><br>${ev.desc}`,'');
+  return ev;
+}
+
+// ================================================================
+// KONIEC TURY
+// ================================================================
+function zaksiegujKoniecTury(msg){
+  let portfelPrzed=wartoscPortfela();
+  if(stan.pendingQuizModifier){pf.gotowka*=stan.pendingQuizModifier;stan.pendingQuizModifier=null;}
+  pf.gotowka+=stan.salary;stan.cumulativeSalary+=stan.salary;
+  msg+=`<br>💰 <span style="color:#22c55e">Pensja: +$${fmtD(stan.salary)}</span> <span style="color:#94a3b8;font-size:.8rem">(razem: $${fmtD(stan.cumulativeSalary)})</span>`;
+  stan.militaria=Math.max(0,stan.militaria-0.1);
+  ['inflacja','pkb','bezrobocie','dlug','bilans','inwestycje','militaria'].forEach(k=>{stan[k]=Math.round(stan[k]*10)/10;});
+  stan.zadowolenie=Math.max(0,Math.min(100,stan.zadowolenie));
+  stan.populalnosc=Math.max(0,Math.min(100,stan.populalnosc));
+  stan.podzial=Math.max(1,Math.min(10,stan.podzial));
+
+  // Wojna z militarów <10%
+  if(stan.militaria<10 && stan.militaria>=1 && Math.random()<0.01){
+    historiaDecyzji.push({tura:stan.tura,decyzja:'⚔️ Wojna (niskie militaria)',stanPrzed:historiaStatystyk[historiaStatystyk.length-1]});
+    endEarly(`⚔️ <strong>WOJNA!</strong> Militaria ${stan.militaria.toFixed(2)}% PKB nie odstraszyły agresora.`);
+    return;
+  }
+
+  if(stan.populalnosc<20){
+    let r=Math.random()*100;
+    if(r<25){endEarly("🧳 <strong>Zwolniony!</strong> Niska popularność.");return;}
+    else if(r<50){endEarly("💀 <strong>Zamach!</strong>");return;}
+    else msg+="<br>⚠️ <i>Druga szansa!</i>";
+  }
+  if(stan.populalnosc<10 && Math.random()<0.10){
+    endEarly("😤 <strong>Zmuszony do rezygnacji!</strong> Poparcie <10%.");
+    return;
+  }
+  if(stan.pkb<-4){
+    let r=Math.random()*100;
+    if(r<50){endEarly("🧳 Zwolniony! Spadek PKB.");return;}
+    else if(r<75){endEarly("💀 Zamach!");return;}
+    else msg+="<br>⚠️ <i>Kryzys potężny.</i>";
+  }
+  if(stan.podzial>7 && stan.gini>0.35){
+    let r=Math.random()*100;
+    if(r<25){endEarly("📢 Dymisja!");return;}
+    else if(r<50){endEarly("🔥 Zamieszki!");return;}
+  }
+  if(stan.bezrobocie>20){if(Math.random()*100<30){endEarly("💀 Zamach!");return;}}
+  else if(stan.bezrobocie>10){if(Math.random()*100<25){endEarly("🧳 Zwolniony!");return;}}
+
+  if(stan.inflacja>=stan.inflacjaTargetMin && stan.inflacja<=stan.inflacjaTargetMax){
+    stan.sukcesy++;stan.punkty+=25;stan.consecutiveTarget++;
+    msg+=`<br>🎯 <em>Cel! (+25 pkt, seria: ${stan.consecutiveTarget})</em>`;
+  } else {stan.consecutiveTarget=0;msg+=`<br>⚠️ <em>Inflacja poza celem.</em>`;}
+
+  let gZ=stan.inflacja*.4-stan.stopy*.9+stan.pkb*1.5-stan.bezrobocie*.15+(stan.inwestycje-20)*.3;
+  stan.gielda=Math.max(50,Math.round(stan.gielda*(1+gZ/100)*10)/10);
+  let qInfl=stan.inflacja/4;
+  stan.inflacjaCumul=((1+stan.inflacjaCumul/100)*(1+qInfl/100)-1)*100;
+
+  let coupons=aktualizujAktywa();
+  if(coupons && coupons.total>1){
+    msg+=`<br>💵 <em>Kupony: +$${fmtD(coupons.total)} (stałe: $${fmtD(coupons.fixed)}, zmienne: $${fmtD(coupons.variable)})</em>`;
+  }
+
+  stan.prod+=(stan.inwestycje-20)*0.3-Math.abs(stan.inflacja-2.5)*0.4+0.3;
+  stan.prod=Math.max(70,Math.min(150,stan.prod));
+  stan.bilans+=(stan.pkb-2.5)*0.3-(stan.stopy<3?0.8:0)+0.1;
+  stan.bilans=Math.max(-10,Math.min(5,stan.bilans));
+
+  let portfelPo=wartoscPortfela();
+  let zmiana=(portfelPo-portfelPrzed)/portfelPrzed*100;
+  let kondycjaPrzed=stan.kondycjaPsychiczna;
+  if(zmiana<-10)stan.kondycjaPsychiczna-=15;
+  else if(zmiana<-5)stan.kondycjaPsychiczna-=8;
+  else if(zmiana<-2)stan.kondycjaPsychiczna-=3;
+  else if(zmiana>10)stan.kondycjaPsychiczna+=8;
+  else if(zmiana>5)stan.kondycjaPsychiczna+=5;
+  else if(zmiana>2)stan.kondycjaPsychiczna+=3;
+  else stan.kondycjaPsychiczna+=2;
+  if(stan.inflacja>12)stan.kondycjaPsychiczna-=5;
+  if(stan.bezrobocie>15)stan.kondycjaPsychiczna-=4;
+  if(stan.pkb<0)stan.kondycjaPsychiczna-=3;
+  if(stan.inflacja>=stan.inflacjaTargetMin && stan.inflacja<=stan.inflacjaTargetMax)stan.kondycjaPsychiczna+=3;
+  stan.kondycjaPsychiczna=Math.max(0,Math.min(100,stan.kondycjaPsychiczna));
+  if(Math.abs(stan.kondycjaPsychiczna-kondycjaPrzed)>2){
+    let delta=stan.kondycjaPsychiczna-kondycjaPrzed;
+    msg+=`<br>${delta<0?'😟':'😊'} <em>Kondycja: ${Math.round(kondycjaPrzed)}→${Math.round(stan.kondycjaPsychiczna)}</em>`;
+  }
+
+  if(stan.kondycjaPsychiczna<=0){
+    endEarly("😵‍💫 <strong>Wypalenie!</strong>");
+    return;
+  }
+  if(stan.kondycjaPsychiczna<=20 && Math.random()<0.20){
+    let bledy=[
+      {msg:'😵 Przemęczenie! Podwyżka stóp przez pomyłkę!',fn:()=>{stan.stopy+=2;stan.pkb-=1;stan.populalnosc-=8;}},
+      {msg:'😴 Zasnąłeś! Rynek spanikował.',fn:()=>{stan.gielda*=0.95;stan.zadowolenie-=5;pf.akcje*=0.95;}},
+      {msg:'🤯 Błąd komunikatu!',fn:()=>{stan.gielda*=0.93;stan.zadowolenie-=8;stan.populalnosc-=10;pf.akcje*=0.93;}},
+      {msg:'💊 Chaos w portfelu!',fn:()=>{pf.gotowka*=0.97;pf.akcje*=0.95;pf.obligacjeStale*=0.97;pf.obligacjeZmienne*=0.97;}}
+    ];
+    let blad=bledy[Math.floor(Math.random()*bledy.length)];
+    blad.fn();stan.punkty-=20;stan.przemeczenieZdarzylo++;
+    msg+=`<br><span style="color:#ef4444">${blad.msg} (-20 pkt)</span>`;
+    showToast('😵 Przemęczenie! -20 pkt','danger');
+  }
+
+  let ev=sprawdzPozytywne();
+  historiaStatystyk.push(snapshot());
+  sprawdzAchievementy();
+  stan.tura++;
+  if(stan.tura>stan.maxTur){zaksiegujKoniec();}
+  else{
+    // Sprawdź military crisis
+    if(stan.militaria<1 && !stan.militaryDone[stan.tura]){
+      stan.pendingMilitaryCrisis=true;
+    }
+    aktualizujInterfejs();
+    let evHtml=ev?`<br>${ev.emoji} <span style="color:#4ade80"><strong>${ev.title}:</strong> ${ev.desc}</span>`:'';
+    wyswietlKomunikator(msg+evHtml);
+  }
+}
+
+// ================================================================
+// AKTYWA
+// ================================================================
+function aktualizujAktywa(){
+  let dStopy=stan.stopy-stan.poprzednieStopy;
+  let zA=stan.inflacja*0.4-stan.stopy*0.9+stan.pkb*1.5-stan.bezrobocie*0.15+(stan.inwestycje-20)*0.3;
+  let zO_stale=-dStopy*4;
+  let zO_zmienne=-dStopy*0.1+(Math.random()-0.5)*0.5;
+  let zN=-stan.stopy*0.55+stan.inflacja*0.75+stan.pkb*0.4-stan.bezrobocie*0.2+0.5;
+  let zZ=stan.inflacja*0.6-stan.stopy*0.35+stan.podzial*0.25-stan.pkb*0.2+(Math.random()-0.5)*6;
+  let zG=savingsYield();
+  pf.akcje*=(1+zA/100);pf.obligacjeStale*=(1+zO_stale/100);
+  pf.obligacjeZmienne*=(1+zO_zmienne/100);
+  pf.nieruchomosci*=(1+zN/100);pf.zloto*=(1+zZ/100);pf.gotowka*=(1+zG/100);
+  pf.akcje=Math.max(0,pf.akcje);pf.obligacjeStale=Math.max(0,pf.obligacjeStale);
+  pf.obligacjeZmienne=Math.max(0,pf.obligacjeZmienne);
+  pf.nieruchomosci=Math.max(0,pf.nieruchomosci);pf.zloto=Math.max(0,pf.zloto);
+
+  let couponFixed=pf.obligacjeStale*0.01;
+  let couponVar=pf.obligacjeZmienne*(stan.stopy/4/100);
+  pf.gotowka+=couponFixed+couponVar;
+
+  function pushIdx(arr,z){arr.push(Math.max(1,Math.round(arr[arr.length-1]*(1+z/100)*1000)/1000));}
+  pushIdx(pf.cenaAkcje,zA);pushIdx(pf.cenaObligStale,zO_stale);pushIdx(pf.cenaObligZmienne,zO_zmienne);
+  pushIdx(pf.cenaNier,zN);pushIdx(pf.cenaZloto,zZ);pushIdx(pf.cenaGotowka,zG);
+  stan.poprzednieStopy=stan.stopy;
+  return {fixed:couponFixed,variable:couponVar,total:couponFixed+couponVar};
+}
+
+// ================================================================
+// ACHIEVEMENTS
+// ================================================================
+const ACHIEVEMENTS = {
+  inflacja_3q:{emoji:'🎯',label:'Mistrz celu',desc:'Inflacja w celu 3 kwartały'},
+  zloto_50:{emoji:'🥇',label:'Złoty Byk',desc:'+50% na złocie'},
+  kryzys_bez_recesji:{emoji:'🛡️',label:'Kryzysowiec',desc:'Kryzys bez recesji'},
+  milioner:{emoji:'💎',label:'Milioner',desc:'Portfel >$2 mln'},
+  pogromca_inflacji:{emoji:'🔥',label:'Pogromca inflacji',desc:'Inflacja ≤3% przy >20% skumulowanej'},
+  byczek:{emoji:'📈',label:'Byczek',desc:'Akcje +30%'},
+  oblig_mistrz:{emoji:'🏛️',label:'Obligacyjny mistrz',desc:'Obligacje +15%'},
+  inflacja_inwest:{emoji:'📊',label:'Inwestycja w inflację',desc:'Portfel pobił inflację o 5%'}
+};
+
+function sprawdzAchievementy(){
+  let nowe=[];
+  function unlock(id){if(!stan.achievements.includes(id)){stan.achievements.push(id);nowe.push(ACHIEVEMENTS[id]);}}
+  if(stan.consecutiveTarget>=3)unlock('inflacja_3q');
+  if(pf.cenaZloto[pf.cenaZloto.length-1]>=150)unlock('zloto_50');
+  if(wartoscPortfela()>=2000000)unlock('milioner');
+  if(stan.inflacja<=3 && stan.inflacjaCumul>20)unlock('pogromca_inflacji');
+  if(pf.cenaAkcje[pf.cenaAkcje.length-1]>=130)unlock('byczek');
+  if(pf.cenaObligStale[pf.cenaObligStale.length-1]>=115)unlock('oblig_mistrz');
+  if(((wartoscPortfela()/PF_START)-1)*100-stan.inflacjaCumul>=5)unlock('inflacja_inwest');
+  if(stan.tura>5 && stan.pkb>0 && historiaStatystyk.some(h=>h.inflacja>15||h.bezrobocie>15))unlock('kryzys_bez_recesji');
+  nowe.forEach(a=>showToast(`${a.emoji} <strong>Osiągnięcie!</strong> ${a.label}`,'gold'));
+}
+
+// ================================================================
+// HANDEL
+// ================================================================
+function kupAktywo(asset,dollars){
+  if(dollars<0)return showTradeMsg("⚠️ Kwota dodatnia.",false);
+  dollars=Math.min(dollars,pf.gotowka);
+  if(dollars<=0.01)return showTradeMsg("⚠️ Brak środków.",false);
+  pf.gotowka-=dollars;pf[asset]+=dollars;
+  odswiezModalPortfela();
+  showTradeMsg(`✅ Kupiono $${fmtD(dollars)}`,true);
+}
+function sprzedajAktywo(asset,dollars){
+  if(dollars<0)return showTradeMsg("⚠️ Kwota dodatnia.",false);
+  dollars=Math.min(dollars,pf[asset]);
+  if(dollars<=0.01)return showTradeMsg("⚠️ Brak środków.",false);
+  pf[asset]-=dollars;pf.gotowka+=dollars;
+  odswiezModalPortfela();
+  showTradeMsg(`✅ Sprzedano $${fmtD(dollars)}`,true);
+}
+function sprzedajWszystko(asset){
+  let v=pf[asset];
+  if(v<=0.01)return showTradeMsg("⚠️ Brak środków.",false);
+  pf.gotowka+=v;pf[asset]=0;
+  odswiezModalPortfela();
+  showTradeMsg(`✅ Sprzedano wszystko.`,true);
+}
+function getTradeAmount(k){let e=document.getElementById('amt-'+k);return e?parseFloat(e.value)||0:0;}
+function assetLabel(k){return {akcje:'📈 Akcje',obligacjeStale:'📋 Oblig. stałe',obligacjeZmienne:'📋 Oblig. zmienne',nieruchomosci:'🏠 Nieruchomości',zloto:'🥇 Złoto'}[k]||k;}
+function setMaxAmount(k,src){let v=src==='savings'?pf.gotowka:pf[k];let e=document.getElementById('amt-'+k);if(e)e.value=Math.floor(v);}
+let tradeTimeout=null;
+function showTradeMsg(msg,ok){
+  let el=document.getElementById('trade-msg');if(!el)return;
+  el.innerHTML=msg;el.style.color=ok?'var(--ok)':'var(--warn)';
+  clearTimeout(tradeTimeout);tradeTimeout=setTimeout(()=>{if(el)el.innerHTML='';},3000);
+  let bp=document.getElementById('btn-portfel');if(bp)bp.innerText=`💼 $${fmtD(wartoscPortfela())}`;
+}
+
+// ================================================================
+// PORTFEL
+// ================================================================
+function otworzPortfel(){odswiezModalPortfela();showTab('aktywa');otworzyModal('modal-portfel');}
+function odswiezModalPortfela(){
+  let total=wartoscPortfela(),zyP=(total-PF_START)/PF_START*100,yld=savingsYield(),realP=zyP-stan.inflacjaCumul;
+  document.getElementById('pf-summary').innerHTML=`
+    <div class="pf-si"><div class="lbl">Start</div><div class="val">$${fmtD(PF_START)}</div></div>
+    <div class="pf-si"><div class="lbl">Aktualnie</div><div class="val" style="color:${total>=PF_START?'var(--ok)':'var(--bad)'}">$${fmtD(total)}</div></div>
+    <div class="pf-si"><div class="lbl">Nominalnie</div><div class="val" style="color:${zyP>=0?'var(--ok)':'var(--bad)'}">${zyP>=0?'+':''}${zyP.toFixed(1)}%</div></div>
+    <div class="pf-si"><div class="lbl">Realnie</div><div class="val" style="color:${realP>=0?'var(--ok)':'var(--bad)'}">${realP>=0?'+':''}${realP.toFixed(1)}%</div></div>
+    <div class="pf-si"><div class="lbl">Stopa oszcz.</div><div class="val" style="color:${yld>0?'var(--ok)':'var(--muted)'}">${yld.toFixed(1)}%</div></div>`;
+  const assets=[
+    {key:'akcje',label:'📈 Akcje',idx:pf.cenaAkcje},
+    {key:'obligacjeStale',label:'📋 Oblig. stałe',idx:pf.cenaObligStale,note:'1% kw. kuponu'},
+    {key:'obligacjeZmienne',label:'📋 Oblig. zmienne',idx:pf.cenaObligZmienne,note:`${(stan.stopy/4).toFixed(2)}% kw. kuponu`},
+    {key:'nieruchomosci',label:'🏠 Nieruchomości',idx:pf.cenaNier},
+    {key:'zloto',label:'🥇 Złoto',idx:pf.cenaZloto}
+  ];
+  let list=`<div class="asset-card" style="border-color:#2563eb;background:#0d1f33"><div><div class="asset-name">💵 Konto oszczędnościowe</div><div style="font-size:.76rem;color:var(--muted)">Oprocentowanie: <strong style="color:${yld>0?'var(--warn)':'var(--muted)'}">${yld.toFixed(1)}%/kw.</strong></div></div><div class="asset-val"><div style="font-weight:800;font-size:1.05rem">$${fmtD(pf.gotowka)}</div></div></div>`;
+  assets.forEach(a=>{
+    let val=pf[a.key],idxN=a.idx.length-1;
+    let chgPct=(a.idx[idxN]/100-1)*100,chgThis=idxN>0?(a.idx[idxN]/a.idx[idxN-1]-1)*100:0;
+    let noteHtml=a.note?` <em style="color:#94a3b8">(${a.note})</em>`:'';
+    list+=`<div class="asset-card"><div><div class="asset-name">${a.label}${noteHtml}</div><div style="font-size:.75rem;color:var(--muted)">Indeks: ${a.idx[idxN].toFixed(1)} | <span class="${chgThis>=0?'pos':'neg'}">${chgThis>=0?'+':''}${chgThis.toFixed(1)}%</span></div></div><div class="asset-val"><div style="font-weight:bold">$${fmtD(val)}</div><div class="${chgPct>=0?'pos':'neg'}" style="font-size:.82rem">${chgPct>=0?'+':''}${chgPct.toFixed(1)}% od startu</div></div></div>`;
+  });
+  document.getElementById('pf-asset-list').innerHTML=list;
+  let trade=`<div class="trade-savings"><div class="sav-title">💵 Konto oszczędnościowe</div><div class="sav-row"><div class="sav-amt">$${fmtD(pf.gotowka)}</div><div class="sav-yield">🏦 ${yld.toFixed(1)}%/kw.</div></div></div><div id="trade-msg" style="font-size:.85rem;min-height:20px;margin-bottom:8px;"></div>`;
+  assets.forEach(a=>{
+    let val=pf[a.key],idxN=a.idx.length-1,chgPct=(a.idx[idxN]/100-1)*100;
+    let noteHtml=a.note?` <em style="color:#94a3b8;font-size:.72rem">(${a.note})</em>`:'';
+    trade+=`<div class="trade-row"><div class="trade-row-top"><div><div class="trade-asset-name">${a.label}${noteHtml}</div><div style="font-size:.75rem;color:var(--muted)">Indeks: <span class="${chgPct>=0?'pos':'neg'}">${a.idx[idxN].toFixed(1)} (${chgPct>=0?'+':''}${chgPct.toFixed(1)}%)</span></div></div><div class="trade-asset-val"><div style="font-weight:bold">$${fmtD(val)}</div><button class="btn btn-xs btn-danger" onclick="sprzedajWszystko('${a.key}')">Sprzedaj wszystko</button></div></div><div class="trade-controls"><input type="number" class="trade-input" id="amt-${a.key}" placeholder="Kwota $" min="1" step="100"><button class="btn btn-xs btn-secondary" onclick="setMaxAmount('${a.key}','savings')" title="Maks. kupno">Max💰</button><button class="btn btn-xs btn-secondary" onclick="setMaxAmount('${a.key}','asset')" title="Maks. sprzedaż">Max📊</button><button class="btn btn-xs btn-success" onclick="kupAktywo('${a.key}',getTradeAmount('${a.key}'))">↑ Kup</button><button class="btn btn-xs btn-warning" onclick="sprzedajAktywo('${a.key}',getTradeAmount('${a.key}'))">↓ Sprzedaj</button></div></div>`;
+  });
+  document.getElementById('pf-trade-panel').innerHTML=trade;
+}
+function showTab(tab){
+  ['aktywa','handel','wykresy'].forEach(t=>{
+    let p=document.getElementById('tab-'+t),b=document.getElementById('tab-btn-'+t);
+    if(p)p.style.display=t===tab?'block':'none';
+    if(b)b.className='tab-btn'+(t===tab?' active':'');
+  });
+  if(tab==='wykresy')renderujWykresPortfela();
+}
+
+// ================================================================
+// WYKRESY
+// ================================================================
+function renderujWykresPortfela(){
+  let canvas=document.getElementById('pf-chart-canvas');if(!canvas)return;
+  if(typeof Chart==='undefined'){canvas.parentElement.innerHTML='<p style="color:var(--warn)">Wykresy niedostępne.</p>';return;}
+  if(pfChartInst){pfChartInst.destroy();pfChartInst=null;}
+  let n=pf.cenaAkcje.length,lb=Array.from({length:n},(_,i)=>i===0?'Start':`Q${i}`);
+  try{
+    pfChartInst=new Chart(canvas.getContext('2d'),{type:'line',
+      data:{labels:lb,datasets:[
+        {label:'📈 Akcje',data:pf.cenaAkcje,borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35},
+        {label:'📋 Oblig. stałe',data:pf.cenaObligStale,borderColor:'#a78bfa',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35},
+        {label:'📋 Oblig. zmienne',data:pf.cenaObligZmienne,borderColor:'#c4b5fd',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35,borderDash:[4,3]},
+        {label:'🏠 Nieruchomości',data:pf.cenaNier,borderColor:'#f59e0b',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35},
+        {label:'🥇 Złoto',data:pf.cenaZloto,borderColor:'#fbbf24',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35},
+        {label:'💵 Oszczędności',data:pf.cenaGotowka,borderColor:'#22c55e',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.35,borderDash:[5,4]}
+      ]},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#f8fafc',boxWidth:12,font:{size:11}}}},
+        scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}}}});
+  }catch(e){console.error(e);}
+}
+function pokazWykres(pole,tytul){
+  if(historiaStatystyk.length<2){wyswietlKomunikator("⚠️ Wykres po pierwszym kwartale.");return;}
+  let labels=historiaStatystyk.map((s,i)=>i===0?'Start':`Q${s.tura-1}`);
+  let data=historiaStatystyk.map(s=>typeof s[pole]==='number'?Math.round(s[pole]*100)/100:null);
+  document.getElementById('modal-wykres-tytul').innerText=`📊 ${tytul}`;
+  otworzyModal('modal-wykres');
+  if(typeof Chart==='undefined')return;
+  let canvas=document.getElementById('wykres-canvas');if(!canvas)return;
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  try{
+    chartInst=new Chart(canvas.getContext('2d'),{type:'line',
+      data:{labels,datasets:[{label:tytul,data,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',borderWidth:2.5,pointBackgroundColor:'#3b82f6',pointRadius:5,tension:.3,fill:true}]},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#f8fafc'}}},
+        scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}}}});
+  }catch(e){console.error(e);}
+}
+
+// ================================================================
+// MODALE
+// ================================================================
+function otworzyModal(id){let e=document.getElementById(id);if(e)e.classList.add('active');}
+function zamknijModal(id){let e=document.getElementById(id);if(e)e.classList.remove('active');}
+function closeOnOverlay(e,id){if(e.target===document.getElementById(id))zamknijModal(id);}
+
+// ================================================================
+// KONIEC
+// ================================================================
+function endEarly(powod){
+  historiaStatystyk.push(snapshot());
+  zmienEkran('screen-end');
+  document.getElementById('tytul-koniec').innerText="💀 KONIEC GRY";
+  let nomG=((stan.gielda/1000)-1)*100,realG=nomG-stan.inflacjaCumul;
+  let w=wartoscPortfela(),zP=(w-PF_START)/PF_START*100;
+  document.getElementById('koniec-podsumowanie').innerHTML=`Państwo: <strong>${stan.nazwa}</strong><br>Punkty: <strong>${stan.punkty} ⭐</strong><br><br>${powod}<br><br>Kadencja: <strong>${stan.tura}. kwartał</strong>.<br><br>🏛️ Giełda: <strong>${stan.gielda.toFixed(0)}</strong> | Realnie: <strong style="color:${realG>=0?'var(--ok)':'var(--bad)'}">${realG>=0?'+':''}${realG.toFixed(1)}%</strong><br>💼 Portfel: <strong style="color:${zP>=0?'var(--ok)':'var(--bad)'}">$${fmtD(w)}</strong> (${zP>=0?'+':''}${zP.toFixed(1)}%)<br>🧠 Kondycja: <strong>${Math.round(stan.kondycjaPsychiczna)}/100</strong>`;
+  renderujAchievementyNaKoniec();generujWyjasnienie();
+}
+
+function zaksiegujKoniec(){
+  zmienEkran('screen-end');
+  document.getElementById('tytul-koniec').innerText="📊 Podsumowanie Kadencji";
+  let bonus=0,bonusHtml='';
+  function tryB(pts,lbl){if(pts>0){bonus+=pts;bonusHtml+=lbl+'<br>';}}
+  let nomGF=((stan.gielda/1000)-1)*100,realGF=nomGF-stan.inflacjaCumul;
+  if(nomGF>0)tryB(Math.round(nomGF*.8),`📈 Giełda +${nomGF.toFixed(1)}%: +${Math.round(nomGF*.8)} pkt`);
+  if(stan.pkb>2.5)tryB(Math.round((stan.pkb-2.5)*15),`📊 PKB: +${Math.round((stan.pkb-2.5)*15)} pkt`);
+  if(5.2>stan.bezrobocie)tryB(Math.round((5.2-stan.bezrobocie)*15),`💼 Bezrobocie: +${Math.round((5.2-stan.bezrobocie)*15)} pkt`);
+  if(stan.zadowolenie>65)tryB(Math.round((stan.zadowolenie-65)*1.5),`😊 Zadowolenie: +${Math.round((stan.zadowolenie-65)*1.5)} pkt`);
+  if(stan.populalnosc>50)tryB(Math.round((stan.populalnosc-50)*1.5),`👍 Popularność: +${Math.round((stan.populalnosc-50)*1.5)} pkt`);
+  if(52>stan.dlug)tryB(Math.round((52-stan.dlug)*3),`💰 Dług: +${Math.round((52-stan.dlug)*3)} pkt`);
+  stan.punkty+=bonus;
+  let w=wartoscPortfela(),zPf=w-PF_START,zPfP=zPf/PF_START*100,realPf=zPfP-stan.inflacjaCumul;
+  let html=`Państwo: <strong>${stan.nazwa}</strong><br>⭐ Wynik: <strong>${stan.punkty}</strong>${bonus>0?` (+${bonus} bonus)`:''}<br>Sukcesy: <strong>${stan.sukcesy}</strong><br><br><strong>📋 Statystyki:</strong><br>Poparcie: <strong>${stan.populalnosc}%</strong> | Zadowolenie: <strong>${stan.zadowolenie}%</strong><br>PKB: <strong>${stan.pkb.toFixed(1)}%</strong> | Inflacja: <strong>${stan.inflacja.toFixed(1)}%</strong> | Bezrobocie: <strong>${stan.bezrobocie.toFixed(1)}%</strong><br>Dług: <strong>${stan.dlug.toFixed(1)}%</strong> | Militaria: <strong>${stan.militaria.toFixed(1)}%</strong> | Kondycja: <strong>${Math.round(stan.kondycjaPsychiczna)}/100</strong><br><br>`;
+  let nc=nomGF>=0?'var(--ok)':'var(--bad)',rc=realGF>=0?'var(--ok)':'var(--bad)';
+  html+=`<strong>🏛️ Giełda:</strong> ${stan.gielda.toFixed(0)} | Nom.: <strong style="color:${nc}">${nomGF>=0?'+':''}${nomGF.toFixed(1)}%</strong> | Real.: <strong style="color:${rc}">${realGF>=0?'+':''}${realGF.toFixed(1)}%</strong><br><br>`;
+  html+=`<strong>💼 Portfel:</strong> <strong style="color:${zPf>=0?'var(--ok)':'var(--bad)'}">$${fmtD(w)}</strong> | Nom.: <strong>${zPfP>=0?'+':''}${zPfP.toFixed(1)}%</strong> | Real.: <strong>${realPf>=0?'+':''}${realPf.toFixed(1)}%</strong><br>`;
+  html+=`💰 Pensje: $${fmtD(stan.cumulativeSalary)} | Końcowa pensja: $${fmtD(stan.salary)}/kw.<br>`;
+  const aParts=[{label:'💵',val:pf.gotowka,idx:pf.cenaGotowka},{label:'📈',val:pf.akcje,idx:pf.cenaAkcje},{label:'📋 st.',val:pf.obligacjeStale,idx:pf.cenaObligStale},{label:'📋 zm.',val:pf.obligacjeZmienne,idx:pf.cenaObligZmienne},{label:'🏠',val:pf.nieruchomosci,idx:pf.cenaNier},{label:'🥇',val:pf.zloto,idx:pf.cenaZloto}];
+  aParts.forEach(a=>{let chgP=(a.idx[a.idx.length-1]/100-1)*100;html+=`${a.label} <strong>$${fmtD(a.val)}</strong> <span style="color:${chgP>=0?'var(--ok)':'var(--bad)'}">(${chgP>=0?'+':''}${chgP.toFixed(1)}%)</span> `;});
+  html+=`<br><br>`;
+  if(bonus>0)html+=`<div style="background:#1e3a1e;border:1px solid var(--ok);border-radius:8px;padding:10px;margin-bottom:14px;"><strong style="color:var(--ok)">🎁 Bonus: +${bonus} pkt</strong><br><div style="font-size:.8rem;color:var(--muted);margin-top:4px">${bonusHtml}</div></div>`;
+  html+=`<strong>📜 Historia:</strong><div style="overflow-x:auto"><table class="history-table"><thead><tr><th>Q</th><th>Decyzja</th><th>Infl.</th><th>PKB</th><th>Bezr.</th><th>Pop.</th><th>Giełda</th><th>Portfel</th></tr></thead><tbody>`;
+  historiaDecyzji.forEach((h,i)=>{
+    let po=historiaStatystyk[i+1],pr=h.stanPrzed;if(!po||!pr)return;
+    function d(a,b,dec=1){return parseFloat((a-b).toFixed(dec));}
+    function cell(v,lower=false){let good=lower?v<0:v>0;let cls=v===0?'':good?'delta-pos':'delta-neg';return `<td class="${cls}">${v>0?'+':''}${v}</td>`;}
+    let dI=d(po.inflacja,pr.inflacja),dP=d(po.pkb,pr.pkb),dB=d(po.bezrobocie,pr.bezrobocie);
+    let dPo=d(po.populalnosc,pr.populalnosc,0),dG=d(po.gielda,pr.gielda,0);
+    let dPf=Math.round(po.portfelWartosc-pr.portfelWartosc);
+    let pfCls=dPf>0?'delta-pos':dPf<0?'delta-neg':'';
+    html+=`<tr><td>Q${h.tura}</td><td>${h.decyzja}</td>${cell(dI,true)}${cell(dP)}${cell(dB,true)}${cell(dPo)}${cell(dG)}<td class="${pfCls}">${dPf>=0?'+':''}$${fmtD(Math.abs(dPf))}</td></tr>`;
+  });
+  html+=`</tbody></table></div><br>`;
+  if(stan.punkty>=180&&stan.sukcesy>=4)html+="🏆 <strong>Wybitna kadencja!</strong>";
+  else if(stan.punkty>=100)html+="🎯 <strong>Dobra kadencja!</strong>";
+  else html+="💡 <strong>Trudna kadencja!</strong>";
+  document.getElementById('koniec-podsumowanie').innerHTML=html;
+  renderujAchievementyNaKoniec();generujWyjasnienie();
+}
+
+function renderujAchievementyNaKoniec(){
+  let el=document.getElementById('achiev-list');if(!el)return;
+  if(!stan.achievements.length){el.innerHTML='';return;}
+  let html='<div style="margin-bottom:14px"><strong style="color:#fbbf24">🏅 Osiągnięcia:</strong><div class="achiev-grid" style="margin-top:8px">';
+  stan.achievements.forEach(id=>{let a=ACHIEVEMENTS[id];if(a)html+=`<div class="achiev-badge">${a.emoji} <span class="ach-lbl">${a.label}</span></div>`;});
+  html+='</div></div>';el.innerHTML=html;
+}
+
+function generujWyjasnienie(){
+  let tips=[];
+  if(stan.inflacja>stan.inflacjaTargetMax)tips.push(`Inflacja ${stan.inflacja.toFixed(1)}% przekroczyła cel.`);
+  if(stan.inflacja<stan.inflacjaTargetMin)tips.push(`Inflacja ${stan.inflacja.toFixed(1)}% poniżej celu.`);
+  if(stan.pkb<0)tips.push(`PKB ujemne (${stan.pkb.toFixed(1)}%).`);
+  if(stan.bezrobocie>10)tips.push(`Bezrobocie ${stan.bezrobocie.toFixed(1)}% wysokie.`);
+  if(stan.dlug>70)tips.push(`Dług ${stan.dlug.toFixed(1)}% PKB wymknął się kontroli.`);
+  if(stan.militaria<1)tips.push(`Militaria ${stan.militaria.toFixed(2)}% PKB – ryzyko wojny!`);
+  let realPf=(wartoscPortfela()/PF_START-1)*100-stan.inflacjaCumul;
+  if(realPf<0)tips.push(`Portfel realnie -${Math.abs(realPf).toFixed(1)}%.`);
+  if(stan.kondycjaPsychiczna<40)tips.push(`Kondycja psychiczna ${Math.round(stan.kondycjaPsychiczna)}/100.`);
+  if(!stan.achievements.includes('inflacja_3q'))tips.push(`Nie utrzymałeś inflacji w celu 3 kwartałów.`);
+  if(!stan.achievements.includes('inflacja_inwest'))tips.push(`Portfel nie pobił inflacji o 5%.`);
+  if(!tips.length)tips.push(`Świetna gra! Spróbuj pobić rekord!`);
+  let html='<div class="explain-box"><h4>💡 Co zrobić inaczej?</h4><ul>';
+  tips.forEach(t=>{html+=`<li>${t}</li>`;});html+='</ul></div>';
+  let el=document.getElementById('wyjasnienie-box');if(el)el.innerHTML=html;
+}
+
+// ================================================================
+// EKSPORT
+// ================================================================
+function kopiujPodsumowanie(){
+  let nomG=((stan.gielda/1000)-1)*100,realG=nomG-stan.inflacjaCumul;
+  let w=wartoscPortfela(),zP=(w-PF_START)/PF_START*100,realPf=zP-stan.inflacjaCumul;
+  let tekst=`🏦 CENTRAL BANKER TYCOON
+${stan.nazwa} | ${stan.tryb==='hard'?'🔥 TRUDNY':'🎯 Normalny'} | ${stan.tura-1}/${stan.maxTur} kw.
+⭐ PUNKTY: ${stan.punkty}
+
+📋 STATYSTYKI:
+Poparcie: ${stan.populalnosc}% | Zadowolenie: ${stan.zadowolenie}%
+Inflacja: ${stan.inflacja.toFixed(1)}% | PKB: ${stan.pkb.toFixed(1)}%
+Bezrobocie: ${stan.bezrobocie.toFixed(1)}% | Dług: ${stan.dlug.toFixed(1)}%
+Militaria: ${stan.militaria.toFixed(1)}% | Kondycja: ${Math.round(stan.kondycjaPsychiczna)}/100
+Giełda: ${stan.gielda.toFixed(0)} | Skum. inflacja: ${stan.inflacjaCumul.toFixed(1)}%
+
+💼 PORTFEL:
+Start: $1,000,000 | Koniec: $${fmtD(w)}
+Nominalnie: ${zP>=0?'+':''}${zP.toFixed(1)}% | Realnie: ${realPf>=0?'+':''}${realPf.toFixed(1)}%
+Pensja końcowa: $${fmtD(stan.salary)}/kw. | Suma: $${fmtD(stan.cumulativeSalary)}
+
+🏅 OSIĄGNIĘCIA (${stan.achievements.length}/8):
+${stan.achievements.length?stan.achievements.map(id=>'• '+ACHIEVEMENTS[id].emoji+' '+ACHIEVEMENTS[id].label).join('\n'):'• Brak'}
+
+📊 WYNIK: ${stan.punkty} pkt`;
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tekst).then(()=>showToast('📋 Skopiowano!','info'),()=>fallbackCopy(tekst));}
+  else fallbackCopy(tekst);
+}
+function fallbackCopy(text){
+  let ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('📋 Skopiowano!','info');}catch(e){showToast('⚠️ Błąd.','');}
+  document.body.removeChild(ta);
+}
+
+// ================================================================
+// RANKING
+// ================================================================
+function getRanking(){try{return JSON.parse(localStorage.getItem(LS_RANKING)||'[]');}catch(e){return[];}}
+function saveRanking(arr){try{localStorage.setItem(LS_RANKING,JSON.stringify(arr));}catch(e){console.error(e);}}
+function pokazRanking(){
+  let arr=getRanking(),el=document.getElementById('ranking-content');if(!el)return;
+  if(!arr.length){el.innerHTML='<div class="no-ranking">Brak wyników.</div>';otworzyModal('modal-ranking');return;}
+  let sorted=arr.sort((a,b)=>b.punkty-a.punkty).slice(0,20);
+  let html='<div class="ranking-list">';
+  sorted.forEach((r,i)=>{
+    let cls=i<3?'rank-'+(i+1):'',emoji=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+    html+=`<div class="rank-row ${cls}"><div class="rank-pos">${emoji}</div><div class="rank-name">${r.nazwa}<span class="rank-mode">${r.tryb==='hard'?'🔥':'🎯'}</span></div><div class="rank-pts">${r.punkty} pkt</div></div>`;
+  });
+  html+='</div>';el.innerHTML=html;otworzyModal('modal-ranking');
+}
+function wyczyscRanking(){
+  if(!confirm('Wyczyścić ranking?'))return;
+  saveRanking([]);showToast('🗑️ Wyczyszczono','info');pokazRanking();
+}
+
+function zapiszRaportIRanking(){
+  let txt=(document.getElementById('report-text').value||'').trim();
+  if(txt.length<30){document.getElementById('report-hint').innerHTML='<span style="color:var(--bad)">⚠️ Min. 30 znaków ('+txt.length+').</span>';return;}
+  if(stan.rankingSaved){showToast('Już zapisano!','info');return;}
+  let arr=getRanking();
+  arr.push({nazwa:stan.nazwa||'Anonim',punkty:stan.punkty,tryb:stan.tryb||'normal',data:new Date().toISOString(),raport:txt,
+    statystyki:{inflacja:stan.inflacja,pkb:stan.pkb,bezrobocie:stan.bezrobocie,populalnosc:stan.populalnosc,portfel:wartoscPortfela(),kondycja:stan.kondycjaPsychiczna}});
+  arr.sort((a,b)=>b.punkty-a.punkty);arr=arr.slice(0,50);saveRanking(arr);
+  stan.rankingSaved=true;
+  let sb=document.getElementById('btn-save-report');if(sb){sb.disabled=true;sb.innerText='✅ Zapisano';}
+  document.getElementById('report-hint').innerHTML='<span style="color:var(--ok)">✅ Raport zapisany!</span>';
+  showToast('✅ Zapisano!','gold');
+}
+</script>
+</body>
+</html>
